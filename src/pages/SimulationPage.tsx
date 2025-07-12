@@ -43,7 +43,7 @@ const HeaderContainer = styled.div` display: flex; flex-direction: column; gap: 
 // const HeaderTopRow = styled.div` display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; `;
 const FileName = styled.h2` color: #2c2c54; font-weight: bold; font-size: 22px; `;
 // const HeaderActions = styled.div` display: flex; align-items: center; gap: 12px; `;
-const SearchInput = styled.div` display: flex; align-items: center; background-color: white; border: 1px solid #E0E0E0; border-radius: 12px; padding: 0 12px; width: 250px; input { border: none; outline: none; padding: 12px 8px; font-size: 14px; flex-grow: 1; } `;
+//const SearchInput = styled.div` display: flex; align-items: center; background-color: white; border: 1px solid #E0E0E0; border-radius: 12px; padding: 0 12px; width: 250px; input { border: none; outline: none; padding: 12px 8px; font-size: 14px; flex-grow: 1; } `;
 // const GoToButton = styled.button` background: none; border: 1px solid #E0E0E0; padding: 8px 12px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; `;
 // const DownloadButton = styled.button` background-color: #673AB7; color: white; border: none; border-radius: 12px; padding: 10px 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; `;
 // const GoToFieldContainer = styled.div<{ $show: boolean; }>` max-height: ${({ $show }) => $show ? '60px' : '0'}; display: flex; justify-content: center; align-items: center; gap: 8px; padding: ${({ $show }) => $show ? '8px 0' : '0'}; overflow: hidden; transition: all 0.3s ease-in-out; opacity: ${({ $show }) => $show ? '1' : '0'}; `;
