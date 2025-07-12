@@ -1,4 +1,11 @@
 // src/components/common/Footer.tsx
+
+const Footer = () => null;
+export default Footer;
+
+
+{/*
+
 import React from 'react';
 import styled from 'styled-components';
 import logoWhite from '../../assets/images/logo-white.png';
@@ -99,3 +106,5 @@ const Footer = () => {
 };
 
 export default Footer;
+
+/*}
