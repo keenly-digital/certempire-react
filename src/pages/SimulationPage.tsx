@@ -21,6 +21,9 @@ type SupabaseFile = { 'ai-parsed-data': { result: { topics: Record<string, Topic
 type StructuredItem = { type: 'question'; content: Question; parent?: { topic?: string; case_study?: string } };
 
 // --- Helper function ---
+
+/*
+
 const getAllQuestions = (topics: Record<string, Topic>): Question[] => {
   if (!topics) return [];
   let questions: Question[] = [];
@@ -32,23 +35,25 @@ const getAllQuestions = (topics: Record<string, Topic>): Question[] => {
   return questions.map((q, index) => ({ ...q, question_number: (index + 1).toString() }));
 };
 
+*/
+
 // --- Styled Components (Full Definitions) ---
 const PageContainer = styled.div` display: flex; flex-direction: column; gap: 16px; `;
 const HeaderContainer = styled.div` display: flex; flex-direction: column; gap: 16px; `;
-const HeaderTopRow = styled.div` display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; `;
+// const HeaderTopRow = styled.div` display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; `;
 const FileName = styled.h2` color: #2c2c54; font-weight: bold; font-size: 22px; `;
-const HeaderActions = styled.div` display: flex; align-items: center; gap: 12px; `;
+// const HeaderActions = styled.div` display: flex; align-items: center; gap: 12px; `;
 const SearchInput = styled.div` display: flex; align-items: center; background-color: white; border: 1px solid #E0E0E0; border-radius: 12px; padding: 0 12px; width: 250px; input { border: none; outline: none; padding: 12px 8px; font-size: 14px; flex-grow: 1; } `;
-const GoToButton = styled.button` background: none; border: 1px solid #E0E0E0; padding: 8px 12px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; `;
-const DownloadButton = styled.button` background-color: #673AB7; color: white; border: none; border-radius: 12px; padding: 10px 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; `;
-const GoToFieldContainer = styled.div<{ $show: boolean; }>` max-height: ${({ $show }) => $show ? '60px' : '0'}; display: flex; justify-content: center; align-items: center; gap: 8px; padding: ${({ $show }) => $show ? '8px 0' : '0'}; overflow: hidden; transition: all 0.3s ease-in-out; opacity: ${({ $show }) => $show ? '1' : '0'}; `;
+// const GoToButton = styled.button` background: none; border: 1px solid #E0E0E0; padding: 8px 12px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; `;
+// const DownloadButton = styled.button` background-color: #673AB7; color: white; border: none; border-radius: 12px; padding: 10px 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; `;
+// const GoToFieldContainer = styled.div<{ $show: boolean; }>` max-height: ${({ $show }) => $show ? '60px' : '0'}; display: flex; justify-content: center; align-items: center; gap: 8px; padding: ${({ $show }) => $show ? '8px 0' : '0'}; overflow: hidden; transition: all 0.3s ease-in-out; opacity: ${({ $show }) => $show ? '1' : '0'}; `;
 const ContentContainer = styled.div` background-color: white; border-radius: 12px; border: 1px solid #E0E0E0; `;
-const TopicHeader = styled.div` display: flex; align-items: center; gap: 16px; padding: 24px; border-bottom: 1px solid #f0f0f0; font-size: 18px; font-weight: bold; color: #424242;`;
+// const TopicHeader = styled.div` display: flex; align-items: center; gap: 16px; padding: 24px; border-bottom: 1px solid #f0f0f0; font-size: 18px; font-weight: bold; color: #424242;`;
 const CaseStudyContainer = styled.div` background-color: rgba(239, 234, 254, 0.4); border-bottom: 1px solid rgba(103, 58, 183, 0.2); padding: 26px; `;
 const QuestionCardContainer = styled.div` padding: 26px; `;
 const QuestionHeader = styled.div` display: flex; align-items: flex-start; gap: 18px; margin-bottom: 24px; `;
 const QuestionNumber = styled.div` background-color: rgba(103, 58, 183, 0.12); color: #673AB7; font-weight: bold; font-size: 16px; padding: 12px; border-radius: 10px; `;
-const QuestionText = styled.div` font-size: 17px; font-weight: 500; line-height: 1.34; flex: 1; img { max-width: 100%; border-radius: 8px; margin-top: 10px; } `;
+// const QuestionText = styled.div` font-size: 17px; font-weight: 500; line-height: 1.34; flex: 1; img { max-width: 100%; border-radius: 8px; margin-top: 10px; } `;
 const Label = styled.p` color: #BDBDBD; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; `;
 const OptionsList = styled.div` display: flex; flex-direction: column; gap: 6px; padding-left: 76px; @media(max-width: 600px) { padding-left: 0; } `;
 const OptionItem = styled.div<{ $isCorrect: boolean; }>` border: 1.1px solid ${({ $isCorrect }) => $isCorrect ? '#2E7D32' : '#E0E0E0'}; background-color: ${({ $isCorrect }) => $isCorrect ? '#E8F5E9' : 'transparent'}; border-radius: 8px; padding: 11px 14px; font-size: 15px; line-height: 1.35; img { max-width: 100%; border-radius: 8px; margin-top: 10px; } `;
