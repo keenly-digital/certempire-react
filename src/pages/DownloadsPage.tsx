@@ -32,14 +32,14 @@ const DownloadsPage = () => {
   useEffect(() => {
   console.log("Current user object:", user);
       const getPurchasedFiles = async () => {
-          console.log("Querying user_purchases for user_id:", user.simulation_user_id);
+       if (!user || !user.simulation_user_id) {
+  console.log('No user or user.simulation_user_id found.');
+setLoading(false);
 
-      // This check now happens first, fixing the "possibly 'null'" error
-      if (!user || !user.simulation_user_id) {
-        setLoading(false);
-        return;
-      }
-      
+return;
+}
+
+console.log("Querying user_purchases for user_id:", user.simulation_user_id);
       setLoading(true);
       try {
         const { data: purchases, error: purchaseError } = await supabase
