@@ -2,6 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { NavLink } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
 
 // The props interface for the component (for mobile state)
 interface SidebarProps {
@@ -109,7 +110,9 @@ const LogoutButton = styled.button`
   text-align: left;
   width: 100%;
 `;
-
+const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
+  const { logout } = useUser(); // <-- Get the logout function from our context
+  
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   return (
     <SidebarContainer isOpen={isOpen}>
