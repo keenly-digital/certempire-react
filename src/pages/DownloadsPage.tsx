@@ -23,96 +23,81 @@ const PrimaryButton = styled(Link)` display: inline-block; background-color: #2c
 const SecondaryButton = styled(Link)` display: inline-block; background-color: white; color: #2c2c54; border: 1px solid #2c2c54; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 14px;`;
 const MessageContainer = styled.div` padding: 40px; text-align: center; color: #757575; background-color: white; border-radius: 12px; border: 1px solid #EAEAEA; `;
 
+
 const DownloadsPage = () => {
-  console.log('--- DownloadsPage component re-rendered ---');
-
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user } = useUser();
   const [files, setFiles] = useState<File[]>([]);
-  const [isPageLoading, setPageLoading] = useState(true);
-
-  // Log current state values on each render
-  console.log('Current State:', { user, isUserLoading, files, isPageLoading });
+  const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('EFFECT: Triggered. Dependencies changed.', { isUserLoading, user });
+  console.log("Current user object:", user);
+      const getPurchasedFiles = async () => {
+          console.log("Querying user_purchases for user_id:", user.simulation_user_id);
 
-    const getPurchasedFiles = async () => {
-      console.log('EFFECT -> getPurchasedFiles: Starting fetch...');
-
+      // This check now happens first, fixing the "possibly 'null'" error
       if (!user || !user.simulation_user_id) {
-        console.log('EFFECT -> getPurchasedFiles: Aborting fetch, no user or user ID found.');
-        setPageLoading(false);
+        setLoading(false);
         return;
       }
       
-      setPageLoading(true);
+      setLoading(true);
       try {
-        console.log(`EFFECT -> getPurchasedFiles: Querying 'user_purchases' for user_id: ${user.simulation_user_id}`);
         const { data: purchases, error: purchaseError } = await supabase
           .from('user_purchases')
           .select('file_id')
-          .eq('user_id', user.simulation_user_id);
+          .eq('user_id', user.simulation_user_id); // This is now safe to call
+            console.log("Purchase query result:", purchases);
+
 
         if (purchaseError) throw purchaseError;
-        
-        console.log('EFFECT -> getPurchasedFiles: Received purchase data:', purchases);
-
         if (!purchases || purchases.length === 0) {
-          console.log('EFFECT -> getPurchasedFiles: No purchases found for this user.');
           setFiles([]);
           return;
         }
+        
 
         const fileIds = purchases.map(p => p.file_id);
-        console.log('EFFECT -> getPurchasedFiles: Extracted file IDs:', fileIds);
+
+          console.log("Querying files for file_ids:", fileIds);
+
         
-        console.log(`EFFECT -> getPurchasedFiles: Querying 'files' table for ${fileIds.length} ID(s).`);
         const { data: fileData, error: fileError } = await supabase
           .from('files')
           .select('id, filename')
           .in('id', fileIds);
 
         if (fileError) throw fileError;
-        
-        console.log('EFFECT -> getPurchasedFiles: Received file data:', fileData);
 
+          console.log("Files query result:", fileData);
+
+        
         const filesWithPlaceholders = (fileData || []).map(file => ({
           ...file,
           downloads_remaining: '∞',
           access_expires: 'Never',
         }));
-        
-        console.log('EFFECT -> getPurchasedFiles: Setting final files state:', filesWithPlaceholders);
+
+          console.log("Setting files state to:", filesWithPlaceholders);
+
         setFiles(filesWithPlaceholders);
 
       } catch (error) {
-        console.error('EFFECT -> getPurchasedFiles: An error occurred during fetch:', error);
+        console.error('Error fetching purchased files:', error);
         setFiles([]);
       } finally {
-        console.log('EFFECT -> getPurchasedFiles: Fetch process finished.');
-        setPageLoading(false);
+        setLoading(false);
       }
     };
 
-    if (!isUserLoading) {
-      console.log('EFFECT: User context is loaded. Calling getPurchasedFiles.');
-      getPurchasedFiles();
-    } else {
-      console.log('EFFECT: User context is still loading. Waiting...');
-    }
-  }, [isUserLoading, user]);
+    getPurchasedFiles();
+  }, [user]); // The effect correctly depends on the user object
 
-  if (isUserLoading || isPageLoading) {
-    console.log('RENDER: Showing "Loading your downloads..." message.');
-    return <MessageContainer>Loading your downloads...</MessageContainer>;
-  }
+  if (isLoading) return <MessageContainer>Loading your downloads...</MessageContainer>;
+  if (!user) return <MessageContainer>Please log in to view your downloads.</MessageContainer>;
   
-  if (!user) {
-    console.log('RENDER: Showing "Please log in" message.');
-    return <MessageContainer>Please log in to view your downloads.</MessageContainer>;
-  }
-  
-  console.log(`RENDER: Preparing to display ${files.length} file(s).`);
+console.log("Final files array about to be rendered:", files);
+
+
   return (
     <div>
       <PageHeader>Downloads</PageHeader>
