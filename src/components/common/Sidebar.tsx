@@ -112,7 +112,7 @@ const LogoutButton = styled.button`
 `;
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const { logout } = useUser(); // <-- Get the logout function from our context
-  
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   return (
     <SidebarContainer isOpen={isOpen}>
@@ -128,4 +128,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   );
 };
 
-export default Sidebar;
+export default Sidebar
