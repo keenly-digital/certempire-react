@@ -60,7 +60,6 @@ const DownloadsPage = () => {
     }),
   }
 );
-const orders = await response.json();
 
         // LOG 6: Raw response status
         console.log('[DownloadsPage] Fetch response status:', response.status);
