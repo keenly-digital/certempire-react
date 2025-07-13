@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 
+// --- Styled Components ---
 const PageHeader = styled.h2` font-size: 24px; font-weight: 600; margin-bottom: 24px; `;
 const DownloadsTable = styled.div` background-color: white; border-radius: 16px; border: 1px solid #EAEAEA; overflow: hidden; `;
 const Row = styled.div` display: grid; grid-template-columns: 3fr 1fr 1fr 2fr; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; &:last-child { border-bottom: none; } `;
@@ -16,91 +17,90 @@ const MessageContainer = styled.div` padding: 40px; text-align: center; color: #
 
 const DownloadsPage = () => {
   const { user } = useUser();
-
-  // LOG 1: Log user object every render
-  console.log('[DownloadsPage] Rendered. user:', user);
-
-  const [files, setFiles] = useState([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // LOG 1: Initial render and user
+  console.log('[DownloadsPage] Render: user:', user);
 
   useEffect(() => {
     // LOG 2: useEffect triggered
-    console.log('[DownloadsPage] useEffect triggered. user:', user);
+    console.log('[DownloadsPage] useEffect: user:', user);
 
     if (!user || !user.id) {
-      // LOG 3: No user, skipping API call
-      console.log('[DownloadsPage] No user or user.id, skipping fetch.');
       setIsLoading(false);
+      // LOG 3: No user available
+      console.log('[DownloadsPage] No user or user.id; aborting fetch.');
       return;
     }
 
-    const fetchDownloads = async () => {
-      // LOG 4: About to fetch downloads
-      console.log('[DownloadsPage] Fetching downloads for user:', user.id);
-
+    const fetchOrders = async () => {
       setIsLoading(true);
-
+      // LOG 4: Fetching orders start
+      console.log('[DownloadsPage] Fetching orders for user_id:', user.id);
       try {
-        const url = 'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data';
-        const body = {
-          endpoint: 'downloads',
-          user_id: user.id,
-        };
-        // LOG 5: Outbound fetch details
-        console.log('[DownloadsPage] Fetch POST:', url, body);
-
-      const response = await fetch(
-  'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      endpoint: 'orders',     // or 'downloads'
-      user_id: user.id,       // WordPress user ID (from login token)
-    }),
-  }
-);
-
-        // LOG 6: Raw response status
-        console.log('[DownloadsPage] Fetch response status:', response.status);
-
+        const response = await fetch(
+          'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              endpoint: 'orders',
+              user_id: user.id, // WordPress user ID
+            }),
+          }
+        );
         const data = await response.json();
+        // LOG 5: Fetched data
+        console.log('[DownloadsPage] API response:', data);
 
-        // LOG 7: Raw data from API
-        console.log('[DownloadsPage] Data from API:', data);
-
-        setFiles(data || []);
-        // LOG 8: setFiles called with:', data || []
+        setOrders(data.orders || []);
       } catch (error) {
-        // LOG 9: Fetch error
-        console.error('[DownloadsPage] Fetch ERROR:', error);
-        setFiles([]);
+        // LOG 6: Error fetching
+        console.error('[DownloadsPage] Error fetching orders:', error);
+        setOrders([]);
       } finally {
         setIsLoading(false);
-        // LOG 10: Fetch completed, isLoading false
-        console.log('[DownloadsPage] Fetch completed, isLoading:', false);
+        // LOG 7: Fetch finished
+        console.log('[DownloadsPage] Fetching finished.');
       }
     };
 
-    fetchDownloads();
+    fetchOrders();
   }, [user]);
 
-  // LOG 11: Current files state before render
-  console.log('[DownloadsPage] Current files before render:', files);
+  // LOG 8: Orders state before render
+  console.log('[DownloadsPage] Current orders before render:', orders);
 
   if (isLoading) {
-    // LOG 12: Show loading
-    console.log('[DownloadsPage] RENDER: Loading...');
+    // LOG 9: Show loading
+    console.log('[DownloadsPage] RENDER: Loading');
     return <MessageContainer>Loading your downloads...</MessageContainer>;
   }
+
   if (!user) {
-    // LOG 13: Show login message
-    console.log('[DownloadsPage] RENDER: Not logged in.');
+    // LOG 10: No user, ask login
+    console.log('[DownloadsPage] RENDER: User not logged in');
     return <MessageContainer>Please log in to view your downloads.</MessageContainer>;
   }
-  if (!files.length) {
-    // LOG 14: No downloads
-    console.log('[DownloadsPage] RENDER: No files to show.');
+
+  // Flatten all items from all orders
+  const allOrderItems =
+    orders?.flatMap((order: any) =>
+      (order.line_items || []).map((item: any) => ({
+        ...item,
+        orderId: order.id,
+        expires: 'Never',
+        downloads_remaining: '∞',
+      }))
+    ) || [];
+
+  // LOG 11: Flattened items
+  console.log('[DownloadsPage] allOrderItems:', allOrderItems);
+
+  if (!allOrderItems.length) {
+    // LOG 12: No downloads
+    console.log('[DownloadsPage] RENDER: No order items to show.');
     return (
       <MessageContainer style={{ border: 'none', borderRadius: 0 }}>
         You have no available downloads.
@@ -108,8 +108,8 @@ const DownloadsPage = () => {
     );
   }
 
-  // LOG 15: Rendering downloads table
-  console.log('[DownloadsPage] RENDER: Rendering downloads table, files:', files);
+  // LOG 13: Rendering downloads table
+  console.log('[DownloadsPage] RENDER: Rendering downloads table, items:', allOrderItems);
 
   return (
     <div>
@@ -121,15 +121,15 @@ const DownloadsPage = () => {
           <DataCell>Expires</DataCell>
           <DataCell style={{ textAlign: 'right' }}>Actions</DataCell>
         </HeaderRow>
-        {files.map((file: any) => (
-          <Row key={file.id}>
-            <DataCell>{file.filename || file.name}</DataCell>
-            <DataCell>{file.downloads_remaining || '∞'}</DataCell>
-            <DataCell>{file.access_expires || 'Never'}</DataCell>
+        {allOrderItems.map((item: any) => (
+          <Row key={`${item.orderId}-${item.id}`}>
+            <DataCell>{item.name}</DataCell>
+            <DataCell>{item.downloads_remaining}</DataCell>
+            <DataCell>{item.expires}</DataCell>
             <DataCell>
               <ButtonContainer>
                 <PrimaryButton to="#">Download</PrimaryButton>
-                <SecondaryButton to={`/practice/${file.id}`}>Practice</SecondaryButton>
+                <SecondaryButton to={`/practice/${item.product_id}`}>Practice</SecondaryButton>
               </ButtonContainer>
             </DataCell>
           </Row>
