@@ -49,11 +49,18 @@ const DownloadsPage = () => {
         // LOG 5: Outbound fetch details
         console.log('[DownloadsPage] Fetch POST:', url, body);
 
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+      const response = await fetch(
+  'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      endpoint: 'orders',     // or 'downloads'
+      user_id: user.id,       // WordPress user ID (from login token)
+    }),
+  }
+);
+const orders = await response.json();
 
         // LOG 6: Raw response status
         console.log('[DownloadsPage] Fetch response status:', response.status);
