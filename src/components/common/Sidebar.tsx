@@ -111,9 +111,8 @@ const LogoutButton = styled.button`
   width: 100%;
 `;
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
-  const { logout } = useUser(); // <-- Get the logout function from our context
+  const { logout } = useUser();
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   return (
     <SidebarContainer isOpen={isOpen}>
       <NavList>
@@ -122,10 +121,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         <StyledNavLink to="/downloads">Downloads</StyledNavLink>
         <StyledNavLink to="/addresses">Addresses</StyledNavLink>
         <StyledNavLink to="/account-details">Account Details</StyledNavLink>
-        <LogoutButton onClick={() => alert('Logout clicked!')}>Log out</LogoutButton>
+         <LogoutButton onClick={logout}>Log out</LogoutButton>
       </NavList>
     </SidebarContainer>
   );
 };
 
-export default Sidebar
+
+
+export default Sidebar;
