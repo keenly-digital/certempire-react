@@ -34,37 +34,34 @@ const DownloadsPage = () => {
       return;
     }
 
-    const fetchOrders = async () => {
-      setIsLoading(true);
-      // LOG 4: Fetching orders start
-      console.log('[DownloadsPage] Fetching orders for user_id:', user.id);
-      try {
-        const response = await fetch(
-          'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              endpoint: 'orders',
-              user_id: user.id, // WordPress user ID
-            }),
-          }
-        );
-        const data = await response.json();
-        // LOG 5: Fetched data
-        console.log('[DownloadsPage] API response:', data);
-
-        setOrders(data.orders || []);
-      } catch (error) {
-        // LOG 6: Error fetching
-        console.error('[DownloadsPage] Error fetching orders:', error);
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
-        // LOG 7: Fetch finished
-        console.log('[DownloadsPage] Fetching finished.');
+const fetchOrders = async () => {
+  setIsLoading(true);
+  console.log('[DownloadsPage] Fetching orders for user_id:', user.id);
+  try {
+    const response = await fetch(
+      'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: 'orders',
+          user_id: user.id, // WordPress user ID
+        }),
       }
-    };
+    );
+    const data = await response.json();
+    // LOG 5: Fetched data
+    console.log('[DownloadsPage] API response:', data);
+
+    setOrders(Array.isArray(data) ? data : data.orders || []);
+  } catch (error) {
+    console.error('[DownloadsPage] Error fetching orders:', error);
+    setOrders([]);
+  } finally {
+    setIsLoading(false);
+    console.log('[DownloadsPage] Fetching finished.');
+  }
+};
 
     fetchOrders();
   }, [user]);
