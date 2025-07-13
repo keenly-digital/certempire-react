@@ -3,17 +3,15 @@
 import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
-  // For CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { email } = await req.json();
+    // Pull the data you need from the request
+    const { endpoint, user_id } = await req.json();
+    if (!endpoint || !user_id) throw new Error('Missing endpoint or user_id');
 
-    if (!email) throw new Error('Missing email');
-
-    // WooCommerce API credentials and site URL from Supabase secrets
     const WC_CONSUMER_KEY = Deno.env.get('WC_CONSUMER_KEY') ?? '';
     const WC_CONSUMER_SECRET = Deno.env.get('WC_CONSUMER_SECRET') ?? '';
     const WP_SITE_URL = Deno.env.get('WP_SITE_URL') ?? '';
@@ -22,18 +20,20 @@ Deno.serve(async (req) => {
       throw new Error('WooCommerce keys or site URL are missing');
     }
 
-    // Official WooCommerce REST API: filter by customer email
-    // Documentation: https://woocommerce.github.io/woocommerce-rest-api-docs/#list-all-orders
-    const apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/orders?customer=${encodeURIComponent(email)}`;
+    let apiUrl = "";
 
-    // HTTP Basic Auth (base64 encode key:secret)
-    const authString = btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`);
+    if (endpoint === "downloads") {
+      apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/customers/${user_id}/downloads?consumer_key=${WC_CONSUMER_KEY}&consumer_secret=${WC_CONSUMER_SECRET}`;
+    } else if (endpoint === "orders") {
+      apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/orders?customer=${user_id}&consumer_key=${WC_CONSUMER_KEY}&consumer_secret=${WC_CONSUMER_SECRET}`;
+    } else {
+      throw new Error("Unknown endpoint requested");
+    }
 
-    // Fetch orders for this customer
+    // Call WooCommerce REST API (no Authorization header needed if using keys in URL)
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Basic ${authString}`,
         'Content-Type': 'application/json',
       },
     });
@@ -42,9 +42,10 @@ Deno.serve(async (req) => {
       throw new Error(`WooCommerce API request failed with status: ${response.status}`);
     }
 
-    const orders = await response.json();
+    const data = await response.json();
 
-    return new Response(JSON.stringify({ orders }), {
+    // Return as flat array, not nested
+    return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
