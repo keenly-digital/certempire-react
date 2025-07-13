@@ -2,17 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
 
-type File = {
-  id: string;
-  filename: string;
-  downloads_remaining: string | number; 
-  access_expires: string;
-};
-
-// --- Styled Components ---
 const PageHeader = styled.h2` font-size: 24px; font-weight: 600; margin-bottom: 24px; `;
 const DownloadsTable = styled.div` background-color: white; border-radius: 16px; border: 1px solid #EAEAEA; overflow: hidden; `;
 const Row = styled.div` display: grid; grid-template-columns: 3fr 1fr 1fr 2fr; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; &:last-child { border-bottom: none; } `;
@@ -23,108 +14,74 @@ const PrimaryButton = styled(Link)` display: inline-block; background-color: #2c
 const SecondaryButton = styled(Link)` display: inline-block; background-color: white; color: #2c2c54; border: 1px solid #2c2c54; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 14px;`;
 const MessageContainer = styled.div` padding: 40px; text-align: center; color: #757575; background-color: white; border-radius: 12px; border: 1px solid #EAEAEA; `;
 
-
 const DownloadsPage = () => {
   const { user } = useUser();
-  const [files, setFiles] = useState<File[]>([]);
-  const [isLoading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  console.log("Current user object:", user);
-      const getPurchasedFiles = async () => {
-       if (!user || !user.simulation_user_id) {
-  console.log('No user or user.simulation_user_id found.');
-setLoading(false);
+    if (!user || !user.email) {
+      setIsLoading(false);
+      return;
+    }
 
-return;
-}
-
-console.log("Querying user_purchases for user_id:", user.simulation_user_id);
-      setLoading(true);
+    const fetchOrders = async () => {
+      setIsLoading(true);
       try {
-        const { data: purchases, error: purchaseError } = await supabase
-          .from('user_purchases')
-          .select('file_id')
-          .eq('user_id', user.simulation_user_id); // This is now safe to call
-            console.log("Purchase query result:", purchases);
-
-
-        if (purchaseError) throw purchaseError;
-        if (!purchases || purchases.length === 0) {
-          setFiles([]);
-          return;
-        }
-        
-
-        const fileIds = purchases.map(p => p.file_id);
-
-          console.log("Querying files for file_ids:", fileIds);
-
-        
-        const { data: fileData, error: fileError } = await supabase
-          .from('files')
-          .select('id, filename')
-          .in('id', fileIds);
-
-        if (fileError) throw fileError;
-
-          console.log("Files query result:", fileData);
-
-        
-        const filesWithPlaceholders = (fileData || []).map(file => ({
-          ...file,
-          downloads_remaining: '∞',
-          access_expires: 'Never',
-        }));
-
-          console.log("Setting files state to:", filesWithPlaceholders);
-
-        setFiles(filesWithPlaceholders);
-
+        const response = await fetch(
+          'https://YOUR_PROJECT_REF.supabase.co/functions/v1/get-wc-data',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email }),
+          }
+        );
+        const data = await response.json();
+        setOrders(data.orders || []);
       } catch (error) {
-        console.error('Error fetching purchased files:', error);
-        setFiles([]);
+        setOrders([]);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    getPurchasedFiles();
-  }, [user]); // The effect correctly depends on the user object
+    fetchOrders();
+  }, [user]);
 
   if (isLoading) return <MessageContainer>Loading your downloads...</MessageContainer>;
   if (!user) return <MessageContainer>Please log in to view your downloads.</MessageContainer>;
-  
-console.log("Final files array about to be rendered:", files);
 
+  // No orders? Show message
+  if (!orders.length)
+    return (
+      <MessageContainer style={{ border: 'none', borderRadius: 0 }}>
+        You have no available downloads.
+      </MessageContainer>
+    );
 
   return (
     <div>
       <PageHeader>Downloads</PageHeader>
       <DownloadsTable>
         <HeaderRow>
-          <DataCell>Product</DataCell>
-          <DataCell>Downloads Remaining</DataCell>
-          <DataCell>Expires</DataCell>
+          <DataCell>Order ID</DataCell>
+          <DataCell>Status</DataCell>
+          <DataCell>Date</DataCell>
           <DataCell style={{ textAlign: 'right' }}>Actions</DataCell>
         </HeaderRow>
-        {files.length > 0 ? files.map((file) => (
-          <Row key={file.id}>
-            <DataCell>{file.filename}</DataCell>
-            <DataCell>{file.downloads_remaining}</DataCell>
-            <DataCell>{file.access_expires}</DataCell>
+        {orders.map((order) => (
+          <Row key={order.id}>
+            <DataCell>#{order.id}</DataCell>
+            <DataCell>{order.status}</DataCell>
+            <DataCell>{new Date(order.date_created).toLocaleDateString()}</DataCell>
             <DataCell>
               <ButtonContainer>
                 <PrimaryButton to="#">Download</PrimaryButton>
-                <SecondaryButton to={`/practice/${file.id}`}>
-                  Practice
-                </SecondaryButton>
+                <SecondaryButton to={`/practice/${order.id}`}>Practice</SecondaryButton>
               </ButtonContainer>
             </DataCell>
           </Row>
-        )) : (
-            <MessageContainer style={{border: 'none', borderRadius: 0}}>You have no available downloads.</MessageContainer>
-        )}
+        ))}
       </DownloadsTable>
     </div>
   );
