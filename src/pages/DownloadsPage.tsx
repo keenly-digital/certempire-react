@@ -45,7 +45,6 @@ const ButtonContainer = styled.div`
   justify-content: flex-end;
 `;
 
-// Update PrimaryButton to be a standard 'a' tag for external links
 const PrimaryButton = styled.a`
   display: inline-block;
   background-color: #2c2c54;
@@ -80,15 +79,10 @@ const MessageContainer = styled.div`
 `;
 
 // --- The Page Component ---
-
 const DownloadsPage = () => {
-  const { user } = useUser();
-  const [orders, setOrders] = useState<any[]>([]);
+  const { user, isLoading: isUserLoading } = useUser();
+  const [downloads, setDownloads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // You should store your WordPress site URL in an environment variable
-  const WP_SITE_URL = process.env.REACT_APP_WP_SITE_URL || 'https://your-wordpress-site.com';
-
 
   useEffect(() => {
     if (!user || !user.id) {
@@ -96,31 +90,38 @@ const DownloadsPage = () => {
       return;
     }
 
-    const fetchOrders = async () => {
+    const getPurchasedDownloads = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          'https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              endpoint: 'orders',
-              user_id: user.id, // WordPress user ID
-            }),
-          }
-        );
+        const response = await fetch('https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+  method: 'GET', // <-- Add this
+  endpoint: 'cwc/downloads', 
+  user_id: user.id 
+}),
+        });
+
         const data = await response.json();
-        setOrders(Array.isArray(data) ? data : data.orders || []);
+        console.log("Downloads API response:", data);
+        console.log(downloads);
+
+
+        // The WooCommerce downloads API returns an array
+  if (data && data.Success && Array.isArray(data.Data)) {
+  setDownloads(data.Data);
+} else {
+  setDownloads([]);
+}
       } catch (error) {
-        console.error('[DownloadsPage] Error fetching orders:', error);
-        setOrders([]);
+        setDownloads([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchOrders();
+    getPurchasedDownloads();
   }, [user]);
 
   if (isLoading) {
@@ -131,18 +132,9 @@ const DownloadsPage = () => {
     return <MessageContainer>Please log in to view your downloads.</MessageContainer>;
   }
 
-  // This business logic remains unchanged, as requested.
-  const allOrderItems =
-    orders?.flatMap((order: any) =>
-      (order.line_items || []).map((item: any) => ({
-        ...item,
-        orderId: order.id, // This gives us the order ID for each item
-        expires: 'Never', // Placeholder
-        downloads_remaining: '∞', // Placeholder
-      }))
-    ) || [];
+  const allDownloads = downloads;
 
-  if (!allOrderItems.length) {
+  if (!downloads.length) {
     return (
       <MessageContainer style={{ border: 'none', borderRadius: 0 }}>
         You have no available downloads.
@@ -160,32 +152,21 @@ const DownloadsPage = () => {
           <DataCell>Expires</DataCell>
           <DataCell style={{ textAlign: 'right' }}>Actions</DataCell>
         </HeaderRow>
-        {allOrderItems.map((item: any) => (
-          <Row key={`${item.orderId}-${item.id}`}>
-            <DataCell>{item.name}</DataCell>
+        {allDownloads.map((item: any) => (
+          <Row key={item.download_id}>
+            <DataCell>{item.product_name}</DataCell>
             <DataCell>{item.downloads_remaining}</DataCell>
-            <DataCell>{item.expires}</DataCell>
+            <DataCell>{item.access_expires}</DataCell>
             <DataCell>
               <ButtonContainer>
-                {/*
-                  FIX 1: "View Order" button now links to the order page on your main site.
-                  This is the most reliable way to let users download without changing the API call.
-                */}
-                <PrimaryButton
-                  href={`${WP_SITE_URL}/my-account/view-order/${item.orderId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View Order
+                <PrimaryButton href={item.download_url} target="_blank">
+                  Download
                 </PrimaryButton>
-
-                {/*
-                  FIX 2: "Practice" button is now fully functional, assuming you've set up
-                  the '/practice/:productId' route in your app's router.
-                */}
-                <SecondaryButton to={`/practice/${item.product_id}`}>
-                  Practice
-                </SecondaryButton>
+             {item.supabase_file_id && (
+  <SecondaryButton to={`/practice/${item.supabase_file_id}`}>
+    Practice
+  </SecondaryButton>
+)}
               </ButtonContainer>
             </DataCell>
           </Row>

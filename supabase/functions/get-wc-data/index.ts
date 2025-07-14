@@ -1,50 +1,99 @@
 // supabase/functions/get-wc-data/index.ts
 
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders } from '../_shared/cors.ts'
+import { Buffer } from 'https://deno.land/std@0.177.0/node/buffer.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Pull the data you need from the request
-    const { endpoint, user_id } = await req.json();
-    if (!endpoint || !user_id) throw new Error('Missing endpoint or user_id');
+    // Get the method and other params from the request body
+    const { method, endpoint, user_id, ...bodyData } = await req.json();
+    if (!method || !endpoint) throw new Error("Missing method or endpoint parameter");
 
-    const WC_CONSUMER_KEY = Deno.env.get('WC_CONSUMER_KEY') ?? '';
-    const WC_CONSUMER_SECRET = Deno.env.get('WC_CONSUMER_SECRET') ?? '';
-    const WP_SITE_URL = Deno.env.get('WP_SITE_URL') ?? '';
+    // Get environment variables
+    const WC_CONSUMER_KEY = Deno.env.get('WC_CONSUMER_KEY');
+    const WC_CONSUMER_SECRET = Deno.env.get('WC_CONSUMER_SECRET');
+    const WP_SITE_URL = Deno.env.get('WP_SITE_URL');
 
-    if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET || !WP_SITE_URL) {
-      throw new Error('WooCommerce keys or site URL are missing');
-    }
+    let apiUrl = '';
+    let fetchOptions: RequestInit = {};
 
-    let apiUrl = "";
+    // --- ROUTE BASED ON THE METHOD PROVIDED IN THE BODY ---
 
-    if (endpoint === "downloads") {
-      apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/customers/${user_id}/downloads?consumer_key=${WC_CONSUMER_KEY}&consumer_secret=${WC_CONSUMER_SECRET}`;
-    } else if (endpoint === "orders") {
-      apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/orders?customer=${user_id}&consumer_key=${WC_CONSUMER_KEY}&consumer_secret=${WC_CONSUMER_SECRET}`;
+    if (method === 'GET') {
+      fetchOptions.method = 'GET';
+      let paramStr = '';
+
+      // This logic is from your original file, now correctly placed
+      if (endpoint.startsWith('wc/')) {
+        // Official WooCommerce API (Basic Auth)
+        apiUrl = `${WP_SITE_URL}/wp-json/wc/v3/${endpoint.replace('wc/', '')}`;
+        if (user_id) apiUrl += `?customer=${user_id}`;
+        
+        const authString = `${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`;
+        const encodedAuth = Buffer.from(authString).toString('base64');
+        fetchOptions.headers = { 'Authorization': `Basic ${encodedAuth}` };
+
+      } else if (endpoint.startsWith('cwc/')) {
+        // Your custom plugin endpoints
+        const route = endpoint.replace('cwc/', '');
+
+        // This detailed logic is restored to handle all cases correctly
+        if (route.startsWith('customer/') || route.startsWith('orders/')) {
+           paramStr = `?customer=${user_id}&consumer_secret=${WC_CONSUMER_SECRET}`;
+        } else if (user_id) {
+           paramStr = `?customer=${user_id}&consumer_secret=${WC_CONSUMER_SECRET}`;
+        } else {
+           paramStr = `?consumer_secret=${WC_CONSUMER_SECRET}`;
+        }
+        apiUrl = `${WP_SITE_URL}/wp-json/cwc/v2/${route}${paramStr}`;
+      
+      } else {
+        throw new Error("Unknown endpoint style for GET request.");
+      }
+
+    } else if (method === 'PUT') {
+      // --- Handle PUT requests (Updating Data) ---
+      fetchOptions.method = 'PUT';
+      if (endpoint.startsWith('cwc/update-customer/')) {
+        const route = endpoint.replace('cwc/', '');
+        const paramStr = `?consumer_secret=${WC_CONSUMER_SECRET}`;
+        apiUrl = `${WP_SITE_URL}/wp-json/cwc/v2/${route}${paramStr}`;
+        fetchOptions.headers = { 'Content-Type': 'application/json' };
+        fetchOptions.body = JSON.stringify(bodyData);
+      } else {
+        throw new Error("Unknown endpoint for PUT request.");
+      }
+
+    } else if (method === 'POST') {
+      // --- Handle POST requests (Password Change) ---
+      fetchOptions.method = 'POST';
+      if (endpoint === 'cwc/customer/set-password') {
+        const route = endpoint.replace('cwc/', '');
+        const paramStr = `?consumer_secret=${WC_CONSUMER_SECRET}`;
+        apiUrl = `${WP_SITE_URL}/wp-json/cwc/v2/${route}${paramStr}`;
+        fetchOptions.headers = { 'Content-Type': 'application/json' };
+        fetchOptions.body = JSON.stringify(bodyData);
+      } else {
+        throw new Error("Unknown endpoint for POST request.");
+      }
+
     } else {
-      throw new Error("Unknown endpoint requested");
+      throw new Error(`Unsupported method in body: ${method}`);
     }
 
-    // Call WooCommerce REST API (no Authorization header needed if using keys in URL)
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // --- Make the final API call to WordPress ---
+    const response = await fetch(apiUrl, fetchOptions);
 
     if (!response.ok) {
-      throw new Error(`WooCommerce API request failed with status: ${response.status}`);
+      const errorBody = await response.text();
+      throw new Error(`WordPress API request failed: ${response.status} - ${errorBody}`);
     }
 
     const data = await response.json();
-
-    // Return as flat array, not nested
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
