@@ -3,7 +3,11 @@ import React from 'react';
 import styled from 'styled-components';
 
 const RenderedContent = styled.div`
-  line-height: 1.5;
+  line-height: 1.6;
+
+  /* This tells the browser to break long words to prevent overflow */
+  overflow-wrap: break-word;
+  word-wrap: break-word; /* Legacy fallback */
 
   p {
     margin-bottom: 1rem;

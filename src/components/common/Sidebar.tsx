@@ -1,118 +1,124 @@
 // src/components/common/Sidebar.tsx
 import React from 'react';
-import styled from 'styled-components';
+import styled, { DefaultTheme } from 'styled-components';
 import { NavLink } from 'react-router-dom';
-import { useUser } from '../../context/UserContext';
 
 // The props interface for the component (for mobile state)
 interface SidebarProps {
   isOpen: boolean;
+  onLogoutClick: () => void;
 }
 
 // This container now matches the floating panel design from your Flutter code
 const SidebarContainer = styled.aside<{ isOpen: boolean; }>`
-  // This is the main container from your Flutter code's BoxDecoration
   width: 255px;
-  margin: 24px; // Gives the "floating" effect
-  background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); // The BoxShadow
-  border: 1.2px solid #EAEAEA; // Border.all(color: Colors.grey.shade200)
+  flex-shrink: 0; 
+  margin: 24px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.borderRadius.large};
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); // Exact shadow from Flutter
+  border: 1.2px solid ${({ theme }) => theme.colors.lightGrey};
+  padding: 8px;
   
-  // This makes it a self-contained scrolling panel
+  // This makes it a self-contained scrolling panel on desktop
   align-self: flex-start;
   position: sticky;
   top: 24px;
   
-  // Responsive logic for mobile view
-  @media (max-width: 650px) {
+  // Responsive logic for mobile/tablet view
+  @media (max-width: 768px) {
     position: fixed;
     left: 0;
     top: 0;
     height: 100%;
-    margin: 0; // No margin on mobile
-    border-radius: 0; // No rounded corners on mobile
+    width: 280px;
+    margin: 0;
+    border-radius: 0;
     transform: ${({ isOpen }) => isOpen ? 'translateX(0)' : 'translateX(-100%)'};
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
+    box-shadow: none;
+    padding: 0;
+    background-color: ${({ theme }) => theme.colors.surface};
+    border: none;
   }
 `;
 
-// This acts as the ListView, holding the navigation items
 const NavList = styled.nav`
   display: flex;
   flex-direction: column;
+
+  /* Remove border from the last item in the list */
+  > *:last-child {
+    border-bottom: none;
+  }
 `;
 
-// This combines the styles of the InkWell and AnimatedContainer
-const StyledNavLink = styled(NavLink)`
-  /* --- Base (inactive) item styles --- */
-  color: rgba(0, 0, 0, 0.85);
+// Base styles for both NavLink and Button to ensure they look the same
+const navItemStyles = ({ theme }: { theme: DefaultTheme }) => `
+  display: block;
   text-decoration: none;
-  font-weight: 500;
-  letter-spacing: 0.14px;
-  padding: 13px 22px;
-  margin: 0;
-  border: 1.3px solid transparent; // Reserve space for the active border
-  border-bottom: 1px solid #f5f5f5; // The Divider between items
-  position: relative; // For the click effect
-  overflow: hidden; // For the click effect
-  
-  /* This replicates the AnimatedContainer properties */
+  font-size: 15px;
   transition: all 0.22s ease-in-out;
+  border-bottom: 1px solid #f0f0f0; /* The Divider */
 
-  /* --- Styles for the ACTIVE link --- */
+  /* Default (inactive) state styles */
+  color: rgba(28, 36, 75, 0.85); /* textPrimary with opacity */
+  font-weight: 500;
+  padding: 13px 22px;
+  border-radius: 13px;
+  border-left: 1.3px solid transparent;
+  border-right: 1.3px solid transparent;
+  border-top: 1.3px solid transparent;
+  margin: 3px 0;
+
+  &:hover {
+    background-color: ${theme.colors.background};
+  }
+
+  @media (max-width: 768px) {
+    margin: 0;
+    border-radius: 0;
+    padding: 16px 24px;
+  }
+`;
+
+const StyledNavLink = styled(NavLink)`
+  ${({ theme }) => navItemStyles({ theme })}
+
+  /* --- Styles for the ACTIVE link, matching Flutter's AnimatedContainer --- */
   &.active {
-    background-color: rgba(44, 44, 84, 0.09); // themeBlue.withOpacity(0.09)
-    color: #2c2c54; // themeBlue
+    color: ${({ theme }) => theme.colors.primary};
+    background-color: rgba(45, 22, 132, 0.09); // themeBlue.withOpacity(0.09)
     font-weight: 600;
-    margin: 3px 6px; // The inset margin
-    border: 1.3px solid rgba(44, 44, 84, 0.21); // The active border
-    border-radius: 13px;
-  }
-  
-  /* --- Replicating the InkWell click effect --- */
-  &:active::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(239, 234, 254, 0.4); /* A light purple/pinkish ripple */
-    animation: ripple 0.3s ease-in;
+    margin: 3px 6px; // Inset margin for active state
+    border: 1.3px solid rgba(45, 22, 132, 0.21); // Active border
   }
 
-  @keyframes ripple {
-    from {
-      opacity: 1;
-      transform: scale(0);
-    }
-    to {
-      opacity: 0;
-      transform: scale(2);
+  @media (max-width: 768px) {
+    &.active {
+      margin: 0;
+      border-left: 1.3px solid transparent;
+      border-right: 1.3px solid transparent;
+      border-top: 1.3px solid transparent;
+      background-color: ${({ theme }) => theme.colors.button};
     }
   }
 `;
 
 const LogoutButton = styled.button`
-  /* Styling to match the inactive NavLink */
-  color: rgba(0, 0, 0, 0.85);
-  font-weight: 500;
-  letter-spacing: 0.14px;
-  padding: 13px 22px;
-  font-size: 16px;
-  font-family: inherit;
+  ${({ theme }) => navItemStyles({ theme })}
   background: none;
-  border: none;
-  border-bottom: 1px solid #f5f5f5;
   cursor: pointer;
   text-align: left;
   width: 100%;
+  font-family: inherit;
+  border-top: 1.3px solid transparent;
+  border-left: 1.3px solid transparent;
+  border-right: 1.3px solid transparent;
 `;
-const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
-  const { logout } = useUser();
 
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onLogoutClick }) => {
   return (
     <SidebarContainer isOpen={isOpen}>
       <NavList>
@@ -121,12 +127,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         <StyledNavLink to="/downloads">Downloads</StyledNavLink>
         <StyledNavLink to="/addresses">Addresses</StyledNavLink>
         <StyledNavLink to="/account-details">Account Details</StyledNavLink>
-         <LogoutButton onClick={logout}>Log out</LogoutButton>
+        <LogoutButton onClick={onLogoutClick}>Log out</LogoutButton>
       </NavList>
     </SidebarContainer>
   );
 };
-
-
 
 export default Sidebar;

@@ -1,9 +1,10 @@
 // src/pages/DashboardPage.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useUser } from '../context/UserContext';
+import { supabase } from '../supabaseClient';
 
-// --- SVG Icons (replaces the react-icons library) ---
+// --- SVG Icons (Business logic untouched) ---
 const IconMedal = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" /></svg>;
 const IconListChecks = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-2h-2v2h2zm0-4h-2v2h2V6.5zm0-4h-2v2h2V3.5zM2 16h8v-2H2v2z" /></svg>;
 const IconFlag = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z" /></svg>;
@@ -11,33 +12,212 @@ const IconShoppingBag = ({ color = 'currentColor' }) => <svg width="24" height="
 const IconCheckCircle = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>;
 const IconEnvelope = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>;
 
+// --- Styled Components (UI/UX Updated) ---
+const WelcomeHeader = styled.h2`
+  font-size: 28px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  margin-bottom: 24px;
+`;
 
-// --- Styled Components ---
-const WelcomeHeader = styled.h2` font-size: 24px; font-weight: 600; color: #333; margin-bottom: 24px; `;
-const DashboardLayout = styled.div` display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: flex-start; @media (max-width: 950px) { grid-template-columns: 1fr; } `;
-const MainColumn = styled.div` display: flex; flex-direction: column; gap: 24px; `;
+const DashboardLayout = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+  @media (max-width: 950px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MainColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
 const RightColumn = styled.div``;
-const StudyCard = styled.div` background: #2c2c54; color: white; padding: 32px; border-radius: 16px; `;
-const StudySubHeader = styled.p` color: rgba(255, 255, 255, 0.7); font-size: 12px; font-weight: bold; letter-spacing: 1.2px; margin-bottom: 8px; `;
-const StudyCourseTitle = styled.h3` color: white; font-size: 22px; font-weight: bold; margin-bottom: 24px; `;
-const ProgressWrapper = styled.div` display: flex; align-items: center; gap: 16px; margin-bottom: 24px; `;
-const ProgressBarContainer = styled.div` flex-grow: 1; background-color: rgba(255, 255, 255, 0.2); border-radius: 10px; height: 10px; overflow: hidden; `;
-const ProgressBarFill = styled.div<{ $progress: number }>` width: ${({ $progress }) => $progress}%; height: 100%; background-color: white; border-radius: 10px; `;
-const StudyButton = styled.button` background-color: white; color: #2c2c54; border: none; border-radius: 10px; padding: 14px 24px; font-weight: bold; font-size: 16px; cursor: pointer; `;
-const SummaryGrid = styled.div` display: grid; grid-template-columns: 1fr 1fr; gap: 20px; `;
-const SummaryCard = styled.div` padding: 20px; background-color: white; border-radius: 16px; border: 1px solid #EAEAEA; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; .top-row { display: flex; justify-content: space-between; align-items: flex-start; } .title { color: #757575; font-size: 16px; font-weight: 500; } .value { font-size: 24px; font-weight: bold; color: #424242; } .icon { font-size: 24px; } `;
-const UpdatesCard = styled.div` padding: 20px; background-color: white; border-radius: 16px; border: 1px solid #EAEAEA; `;
-const UpdatesHeader = styled.h3` font-size: 18px; font-weight: bold; margin-bottom: 8px; `;
-const UpdateItem = styled.div<{ $isUnread?: boolean }>` display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f0f0f0; &:last-child { border-bottom: none; } .icon { font-size: 24px; } .title { font-weight: ${({ $isUnread }) => ($isUnread ? 'bold' : '500')}; font-size: 15px; } .subtitle { color: #757575; font-size: 13px; margin-top: 4px; } .unread-dot { height: 8px; width: 8px; background-color: #2c2c54; border-radius: 50%; margin-left: auto; } `;
 
-// --- The Main Page Component ---
+
+const StudyCard = styled.div`
+  background: ${({ theme }) => theme.gradients.primary};
+  color: ${({ theme }) => theme.colors.textOnPrimary};
+  padding: 32px;
+  border-radius: ${({ theme }) => theme.borderRadius.large};
+  box-shadow: ${({ theme }) => theme.shadows.button};
+`;
+
+
+const StudySubHeader = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+`;
+
+const StudyCourseTitle = styled.h3`
+  color: ${({ theme }) => theme.colors.textOnPrimary};
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 24px;
+`;
+
+const ProgressWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+const ProgressBarContainer = styled.div`
+  flex-grow: 1;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  height: 10px;
+  overflow: hidden;
+`;
+
+const ProgressBarFill = styled.div<{ $progress: number }>`
+  width: ${({ $progress }) => $progress}%;
+  height: 100%;
+  background-color: ${({ theme }) => theme.colors.textOnPrimary};
+  border-radius: 10px;
+`;
+
+const StudyButton = styled.button`
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.medium};
+  padding: 14px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const SummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  @media (max-width: 650px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const SummaryCard = styled.div`
+  padding: 24px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.borderRadius.large};
+  border: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .title {
+    color: ${({ theme }) => theme.colors.textSecondary};
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .value {
+    font-size: 28px;
+    font-weight: 600;
+    color: ${({ theme }) => theme.colors.textPrimary};
+  }
+  .icon {
+    font-size: 24px;
+  }
+`;
+
+const UpdatesCard = styled(SummaryCard)`
+  /* Inherits styles from SummaryCard */
+`;
+
+const UpdatesHeader = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  margin-bottom: 8px;
+`;
+
+const UpdateItem = styled.div<{ $isUnread?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  &:last-child {
+    border-bottom: none;
+  }
+  .icon {
+    font-size: 24px;
+  }
+  .title {
+    font-weight: ${({ $isUnread }) => ($isUnread ? '600' : '500')};
+    color: ${({ theme }) => theme.colors.textPrimary};
+    font-size: 15px;
+  }
+  .subtitle {
+    color: ${({ theme }) => theme.colors.textSecondary};
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .unread-dot {
+    height: 8px;
+    width: 8px;
+    background-color: ${({ theme }) => theme.colors.primary};
+    border-radius: 50%;
+    margin-left: auto;
+  }
+`;
+
+
 const DashboardPage = () => {
+  // --- Business Logic (Untouched) ---
   const { user } = useUser();
+  const [displayName, setDisplayName] = useState('there');
   const progress = (35 / 150) * 100;
 
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserName = async () => {
+      try {
+        const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
+          body: { 
+            method: 'GET', 
+            endpoint: `cwc/customer/${user.id}`, 
+            user_id: user.id 
+          },
+        });
+        if (error) throw error;
+        if (apiResponse && apiResponse.Success && apiResponse.Data.first_name) {
+          setDisplayName(apiResponse.Data.first_name);
+        }
+      } catch (err) {
+        console.error("Error fetching user name for dashboard:", err);
+      }
+    };
+    fetchUserName();
+  }, [user]);
+
+  // --- JSX (Untouched) ---
   return (
     <div>
-      <WelcomeHeader>Welcome back, {user?.name || 'there'}!</WelcomeHeader>
+      <WelcomeHeader>Welcome back, {displayName}!</WelcomeHeader>
       
       <DashboardLayout>
         <MainColumn>
@@ -48,7 +228,7 @@ const DashboardPage = () => {
               <ProgressBarContainer>
                 <ProgressBarFill $progress={progress} />
               </ProgressBarContainer>
-              <p>35/150</p>
+              <p>{Math.round(progress)}%</p>
             </ProgressWrapper>
             <StudyButton>Continue Studying</StudyButton>
           </StudyCard>

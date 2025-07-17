@@ -1,6 +1,6 @@
 // src/pages/OrdersPage.tsx
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { DefaultTheme } from 'styled-components';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useUser } from '../context/UserContext';
@@ -11,70 +11,255 @@ type Order = {
   date_created: string;
   status: string;
   total: string;
-  currency: string; // Add this line
+  currency: string;
 };
 
-// --- Styled Components (a direct translation of your Flutter UI) ---
+// --- Helper Functions for UI ---
+const formatDate = (isoTimestamp: string) => {
+  try {
+    return new Date(isoTimestamp).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return 'N/A';
+  }
+};
+
+const getStatusColors = (status: string, theme: DefaultTheme) => {
+  switch (status) {
+    case 'completed':
+      return { bg: 'rgba(46, 125, 50, 0.11)', text: '#2E7D32' };
+    case 'processing':
+      return { bg: `rgba(45, 22, 132, 0.11)`, text: theme.colors.primary };
+    case 'pending':
+      return { bg: 'rgba(230, 81, 0, 0.11)', text: '#E65100' };
+    default:
+      return { bg: theme.colors.lightGrey, text: theme.colors.textSecondary };
+  }
+};
+
+
+// --- Styled Components (UI/UX Updated) ---
 
 const PageHeader = styled.h2`
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
+  color: ${({ theme }) => theme.colors.textPrimary};
   margin-bottom: 24px;
 `;
 
-const OrdersListContainer = styled.div`
-  background-color: white;
-  border-radius: 16px;
-  border: 1px solid #EAEAEA;
-  overflow: hidden;
+// --- Single Order Card Styles ---
+const SingleOrderCard = styled.div`
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  border: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  max-width: 700px;
+  margin: 24px auto;
 `;
 
-const OrderRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 2fr 1.5fr 2fr 1fr;
+const SingleOrderHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f5f5f5;
+  margin-bottom: 12px;
+`;
 
-  &:last-child {
-    border-bottom: none;
+const SingleOrderId = styled.h3`
+  font-size: 22px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const SingleOrderInfo = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+
+  strong {
+    color: ${({ theme }) => theme.colors.textPrimary};
+    font-weight: 600;
   }
 `;
 
-const HeaderRow = styled(OrderRow)`
-  background-color: #fafafa;
-  color: #333;
+const SingleOrderTotal = styled.div`
+  font-size: 18px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  margin-bottom: 24px;
+`;
+
+const SingleOrderButton = styled(Link)`
+  display: block;
+  width: 100%;
+  text-align: center;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.textOnPrimary};
+  padding: 12px;
+  border-radius: 12px;
+  text-decoration: none;
   font-weight: 600;
-  border-bottom: 1px solid #EAEAEA;
+  font-size: 16px;
+  transition: opacity 0.2s ease-in-out;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+
+// --- Desktop Table Styles ---
+const DesktopTableContainer = styled.div`
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 22px; // Matching Flutter
+  border: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  overflow: hidden;
+
+  @media (max-width: 800px) {
+    display: none; // Hide on mobile
+  }
+`;
+
+const HeaderRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.5fr 2fr 1.2fr;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: rgba(45, 22, 132, 0.08); // Matching Flutter
+`;
+
+const HeaderCell = styled.div`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 700; // Bold
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+`;
+
+const DataRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.5fr 2fr 1.2fr;
+  align-items: center;
+  padding: 18px 24px;
+  border-top: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.background};
+  }
 `;
 
 const DataCell = styled.div`
-  color: #555;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 15px;
+
+  &.order-id {
+    color: ${({ theme }) => theme.colors.primary};
+    font-weight: 600;
+  }
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
-  background-color: ${({ status }) => status === 'completed' ? '#E8F5E9' : '#FFF3E0'};
-  color: ${({ status }) => status === 'completed' ? '#2E7D32' : '#E65100'};
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-weight: 500;
+  background-color: ${({ status, theme }) => getStatusColors(status, theme).bg};
+  color: ${({ status, theme }) => getStatusColors(status, theme).text};
+  padding: 5px 10px;
+  border-radius: 7px; // Matching Flutter
+  font-weight: 600;
   font-size: 12px;
   text-transform: capitalize;
+  display: inline-block;
 `;
 
 const ViewButton = styled(Link)`
-  background-color: #2c2c54;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.textOnPrimary};
+  padding: 8px 22px;
+  border-radius: 22px; // Matching Flutter
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 700;
   text-align: center;
+  justify-self: start;
+  transition: opacity 0.2s ease-in-out;
+
+  &:hover {
+    opacity: 0.9;
+  }
 `;
 
-const MessageContainer = styled.div` padding: 40px; text-align: center; color: #757575; background-color: white; border-radius: 12px; border: 1px solid #EAEAEA; `;
+// --- Mobile Card Styles ---
 
-// --- The Main Page Component ---
+const MobileListContainer = styled.div`
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (max-width: 800px) {
+    display: flex; // Show on mobile
+  }
+`;
+
+const MobileOrderCard = styled.div`
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: 16px;
+  box-shadow: ${({ theme }) => theme.shadows.card};
+  border: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  padding: 16px;
+`;
+
+const CardRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const CardOrderId = styled.div`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 700;
+  font-size: 16px;
+`;
+
+const CardDate = styled.div`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 13px;
+  margin-bottom: 12px;
+`;
+
+const CardTotal = styled(CardOrderId)`
+  margin-top: 12px;
+`;
+
+const CardViewButton = styled(ViewButton)`
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+`;
+
+// --- Common ---
+
+const MessageContainer = styled.div`
+  padding: 40px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.borderRadius.large};
+  border: 1px solid ${({ theme }) => theme.colors.lightGrey};
+  box-shadow: ${({ theme }) => theme.shadows.card};
+`;
+
+const NoOrdersMessage = styled.div`
+  padding: 48px 24px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
+
+// --- The Main Page Component (Business Logic Untouched) ---
 const OrdersPage = () => {
   const { user, isLoading: isUserLoading } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -82,36 +267,32 @@ const OrdersPage = () => {
 
   useEffect(() => {
     const getOrdersFromWP = async () => {
-      // We must have a user with a WordPress ID to continue
       if (!user || !user.id) {
         setPageLoading(false);
         return;
       }
       
      try {
-const payload = { 
-  method: 'GET', // <-- Add this
-  endpoint: 'cwc/orders',
-  user_id: user.id
-};
-  // Add this line to see the exact data being sent
-  console.log('Sending to Supabase:', payload);
+        const payload = { 
+          method: 'GET',
+          endpoint: 'cwc/orders',
+          user_id: user.id
+        };
+        const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
+          body: payload,
+        });
 
-  const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
-    body: payload,
-  });
+        if (error) throw error;
+        
+        if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data)) {
+            setOrders(apiResponse.Data);
+        }
 
-  if (error) throw error;
-  
-  if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data)) {
-      setOrders(apiResponse.Data);
-  }
-
-} catch (error) {
-  console.error('Error fetching orders from WordPress:', error);
-} finally {
-  setPageLoading(false);
-}
+      } catch (error) {
+        console.error('Error fetching orders from WordPress:', error);
+      } finally {
+        setPageLoading(false);
+      }
     };
 
     if (!isUserLoading) {
@@ -125,29 +306,67 @@ const payload = {
   return (
     <div>
       <PageHeader>Orders</PageHeader>
-      <OrdersListContainer>
-        <HeaderRow>
-          <DataCell>Order</DataCell>
-          <DataCell>Date</DataCell>
-          <DataCell>Status</DataCell>
-          <DataCell>Total</DataCell>
-          <DataCell style={{ textAlign: 'right' }}>Actions</DataCell>
-        </HeaderRow>
-        
-        {orders.length > 0 ? orders.map((order) => (
-          <OrderRow key={order.id}>
-            <DataCell>#{order.id}</DataCell>
-            <DataCell>{new Date(order.date_created).toLocaleDateString()}</DataCell>
-            <DataCell><StatusBadge status={order.status}>{order.status}</StatusBadge></DataCell>
-            <DataCell>{`${order.currency}${order.total}`}</DataCell>
-            <DataCell style={{ textAlign: 'right' }}>
-              <ViewButton to={`/orders/${order.id}`}>View</ViewButton>
-            </DataCell>
-          </OrderRow>
-        )) : (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#757575' }}>You have no orders yet.</div>
-        )}
-      </OrdersListContainer>
+      
+      {orders.length === 0 ? (
+        <MessageContainer>
+            You have no orders yet.
+        </MessageContainer>
+      ) : orders.length === 1 ? (
+        <SingleOrderCard>
+            <SingleOrderHeader>
+                <SingleOrderId>Order #{orders[0].id}</SingleOrderId>
+                <StatusBadge status={orders[0].status}>{orders[0].status}</StatusBadge>
+            </SingleOrderHeader>
+            <SingleOrderInfo>
+                Placed on <strong>{formatDate(orders[0].date_created)}</strong>
+            </SingleOrderInfo>
+            <SingleOrderTotal>
+                Total: {orders[0].currency} {orders[0].total}
+            </SingleOrderTotal>
+            <SingleOrderButton to={`/orders/${orders[0].id}`}>View Details</SingleOrderButton>
+        </SingleOrderCard>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <DesktopTableContainer>
+            <HeaderRow>
+              <HeaderCell>Order</HeaderCell>
+              <HeaderCell>Date</HeaderCell>
+              <HeaderCell>Status</HeaderCell>
+              <HeaderCell>Total</HeaderCell>
+              <HeaderCell>Actions</HeaderCell>
+            </HeaderRow>
+            
+            {orders.map((order) => (
+              <DataRow key={order.id}>
+                <DataCell className="order-id">#{order.id}</DataCell>
+                <DataCell>{formatDate(order.date_created)}</DataCell>
+                <DataCell><StatusBadge status={order.status}>{order.status}</StatusBadge></DataCell>
+                <DataCell>{`${order.currency} ${order.total}`}</DataCell>
+                <DataCell>
+                  <ViewButton to={`/orders/${order.id}`}>View</ViewButton>
+                </DataCell>
+              </DataRow>
+            ))}
+          </DesktopTableContainer>
+
+          {/* Mobile Card View */}
+          <MobileListContainer>
+            {orders.map((order) => (
+              <MobileOrderCard key={order.id}>
+                <CardRow>
+                  <CardOrderId>#{order.id}</CardOrderId>
+                  <StatusBadge status={order.status}>{order.status}</StatusBadge>
+                </CardRow>
+                <CardDate>{formatDate(order.date_created)}</CardDate>
+                <hr style={{border: 'none', borderTop: '1px solid #eee', margin: '12px 0'}} />
+                <CardTotal>{`${order.currency} ${order.total}`}</CardTotal>
+                <CardViewButton to={`/orders/${order.id}`}>View Details</CardViewButton>
+              </MobileOrderCard>
+            ))}
+          </MobileListContainer>
+        </>
+      )}
     </div>
   );
 };

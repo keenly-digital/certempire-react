@@ -10,19 +10,30 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    height: 100%; /* This is the key change */
+    height: 100%;
   }
 
   body {
     background-color: ${({ theme }) => theme.colors.background};
-    color: ${({ theme }) => theme.colors.textPrimary};
+    color: ${({ theme }) => theme.colors.textSecondary};
     font-family: ${({ theme }) => theme.fonts.primary};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   a {
-    color: inherit;
+    color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
+    transition: color 0.2s ease-in-out;
+
+    &:hover {
+      color: ${({ theme }) => theme.colors.primaryLight};
+    }
+  }
+
+  /* Set a default color for all heading levels */
+  h1, h2, h3, h4, h5, h6 {
+    color: ${({ theme }) => theme.colors.textPrimary};
+    font-weight: 600;
   }
 `;
