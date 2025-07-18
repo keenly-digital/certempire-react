@@ -15,6 +15,7 @@ const HeaderContainer = styled.header`
   /* Responsive padding for different screen sizes */
   padding: 0 32px;
   display: flex;
+  shring: 0;
   justify-content: space-between;
   align-items: center;
   color: ${({ theme }) => theme.colors.textOnPrimary};

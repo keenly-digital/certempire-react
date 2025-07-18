@@ -7,6 +7,7 @@ export const theme = {
     primaryLight: '#5F3DF2', // A slightly lighter purple for gradients/highlights
     accent: '#BA93FD', // Lighter purple for icons and accents
     
+    
     // UI Colors
     background: '#FDFBFF', // The very light pinkish-white background
     surface: '#FFFFFF', // For cards and floating elements

@@ -198,14 +198,19 @@ const PrimaryButton = styled.a`
 `;
 const SecondaryButton = styled(Link)`
   display: inline-block;
-  background-color: white;
-  color: #2c2c54;
-  border: 1px solid #2c2c54;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: #ffffff;
+  border: 0.5px solidrgb(177, 177, 255);
   padding: 10px 20px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
+  text-align: center;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryLight};
+    color: white;
 `;
 const MessageContainer = styled.div`
   padding: 40px;

@@ -26,8 +26,9 @@ export const GlobalStyle = createGlobalStyle`
     text-decoration: none;
     transition: color 0.2s ease-in-out;
 
-    &:hover {
-      color: ${({ theme }) => theme.colors.primaryLight};
+   &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryLight};
+    color: white;
     }
   }
 

@@ -3,6 +3,15 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../supabaseClient';
+import { Link } from 'react-router-dom';
+
+
+type ProgressRecord = {
+  last_viewed_file_id: string;
+  product_name: string;
+  last_viewed_question_index: number;
+  total_questions: number;
+};
 
 // --- SVG Icons (Business logic untouched) ---
 const IconMedal = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" /></svg>;
@@ -190,7 +199,7 @@ const DashboardPage = () => {
   // --- Business Logic (Untouched) ---
   const { user } = useUser();
   const [displayName, setDisplayName] = useState('there');
-  const progress = (35 / 150) * 100;
+const [lastStudySession, setLastStudySession] = useState<ProgressRecord | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -214,6 +223,33 @@ const DashboardPage = () => {
     fetchUserName();
   }, [user]);
 
+  // --- This entire block is new ---
+useEffect(() => {
+  if (!user) return;
+
+  const fetchProgress = async () => {
+    // Fetches the most recently updated progress record for the user
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single(); // .single() returns one object or null
+
+    if (data) {
+      setLastStudySession(data);
+    }
+
+    // Ignore the error when no row is found, as that's expected for new users
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching user progress:", error);
+    }
+  };
+
+  fetchProgress();
+}, [user]); // Re-run when the user object is available
+
   // --- JSX (Untouched) ---
   return (
     <div>
@@ -223,14 +259,33 @@ const DashboardPage = () => {
         <MainColumn>
           <StudyCard>
             <StudySubHeader>CONTINUE WHERE YOU LEFT OFF</StudySubHeader>
-            <StudyCourseTitle>MB-330: Microsoft Dynamics 365 Supply Chain Management</StudyCourseTitle>
-            <ProgressWrapper>
-              <ProgressBarContainer>
-                <ProgressBarFill $progress={progress} />
-              </ProgressBarContainer>
-              <p>{Math.round(progress)}%</p>
-            </ProgressWrapper>
-            <StudyButton>Continue Studying</StudyButton>
+{lastStudySession && lastStudySession.total_questions > 0 ? (
+  <>
+    <StudyCourseTitle>{lastStudySession.product_name}</StudyCourseTitle>
+    <ProgressWrapper>
+      <ProgressBarContainer>
+        <ProgressBarFill $progress={((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100} />
+      </ProgressBarContainer>
+      <p>
+        {Math.round(((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100)}%
+      </p>
+    </ProgressWrapper>
+    <StudyButton
+      as={Link}
+      to={`/practice/${lastStudySession.last_viewed_file_id}`}
+      state={{ startIndex: lastStudySession.last_viewed_question_index }}
+    >
+      Continue Studying
+    </StudyButton>
+  </>
+) : (
+  <>
+    <StudyCourseTitle>No recent activity</StudyCourseTitle>
+    <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginTop: '16px' }}>
+      Your progress will appear here once you start a practice session.
+    </p>
+  </>
+)}
           </StudyCard>
 
           <SummaryGrid>
@@ -264,6 +319,16 @@ const DashboardPage = () => {
               </div>
               <div className="unread-dot"></div>
             </UpdateItem>
+
+  <UpdateItem $isUnread>
+              <IconCheckCircle color="green" />
+              <div>
+                <p className="title">New Task Assigned</p>
+                <p className="subtitle">Review "AZ-104" feedback</p>
+              </div>
+              <div className="unread-dot"></div>
+            </UpdateItem>
+
             <UpdateItem>
               <IconEnvelope color="blue" />
               <div>

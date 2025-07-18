@@ -120,6 +120,8 @@ const SaveButton = styled.button`
 
   &:hover:not(:disabled) {
     opacity: 0.9;
+    background-color: ${({ theme }) => theme.colors.primaryLight};
+    color: white;
   }
 `;
 

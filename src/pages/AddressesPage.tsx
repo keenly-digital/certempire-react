@@ -104,8 +104,10 @@ const EditLink = styled(Link)`
   font-size: 15px;
   white-space: nowrap;
 
-  &:hover {
-    color: ${({ theme }) => theme.colors.primary};
+&:hover {
+    background-color: ${({ theme }) => theme.colors.primaryLight};
+    color: white;
+    padding: 5px;
   }
 `;
 

@@ -12,13 +12,14 @@ interface SidebarProps {
 // This container now matches the floating panel design from your Flutter code
 const SidebarContainer = styled.aside<{ isOpen: boolean; }>`
   width: 255px;
-  flex-shrink: 0; 
+  flex-shrink: 0;
   margin: 24px;
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: ${({ theme }) => theme.borderRadius.large};
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); // Exact shadow from Flutter
   border: 1.2px solid ${({ theme }) => theme.colors.lightGrey};
   padding: 8px;
+  height: 93%;
   
   // This makes it a self-contained scrolling panel on desktop
   align-self: flex-start;
@@ -59,7 +60,7 @@ const navItemStyles = ({ theme }: { theme: DefaultTheme }) => `
   display: block;
   text-decoration: none;
   font-size: 15px;
-  transition: all 0.22s ease-in-out;
+  transition: all 0.10s ease-in-out;
   border-bottom: 1px solid #f0f0f0; /* The Divider */
 
   /* Default (inactive) state styles */
@@ -74,6 +75,7 @@ const navItemStyles = ({ theme }: { theme: DefaultTheme }) => `
 
   &:hover {
     background-color: ${theme.colors.background};
+    color: ${theme.colors.primary};
   }
 
   @media (max-width: 768px) {
@@ -89,7 +91,7 @@ const StyledNavLink = styled(NavLink)`
   /* --- Styles for the ACTIVE link, matching Flutter's AnimatedContainer --- */
   &.active {
     color: ${({ theme }) => theme.colors.primary};
-    background-color: rgba(45, 22, 132, 0.09); // themeBlue.withOpacity(0.09)
+    background-color: ${({ theme }) => theme.colors.background};
     font-weight: 600;
     margin: 3px 6px; // Inset margin for active state
     border: 1.3px solid rgba(45, 22, 132, 0.21); // Active border
@@ -106,16 +108,18 @@ const StyledNavLink = styled(NavLink)`
   }
 `;
 
+// --- CORRECTED LOGOUT BUTTON ---
+// It now correctly inherits all base styles from navItemStyles
 const LogoutButton = styled.button`
   ${({ theme }) => navItemStyles({ theme })}
-  background: none;
+  
+  // Add specific button resets
   cursor: pointer;
   text-align: left;
   width: 100%;
   font-family: inherit;
-  border-top: 1.3px solid transparent;
-  border-left: 1.3px solid transparent;
-  border-right: 1.3px solid transparent;
+  background-color: transparent; // Ensure it starts transparent like NavLink
+  border: none; // Reset default button border
 `;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onLogoutClick }) => {
