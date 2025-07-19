@@ -252,12 +252,6 @@ const MessageContainer = styled.div`
   box-shadow: ${({ theme }) => theme.shadows.card};
 `;
 
-const NoOrdersMessage = styled.div`
-  padding: 48px 24px;
-  text-align: center;
-  color: ${({ theme }) => theme.colors.textSecondary};
-`;
-
 
 // --- The Main Page Component (Business Logic Untouched) ---
 const OrdersPage = () => {
@@ -271,9 +265,9 @@ const OrdersPage = () => {
         setPageLoading(false);
         return;
       }
-      
-     try {
-        const payload = { 
+
+      try {
+        const payload = {
           method: 'GET',
           endpoint: 'cwc/orders',
           user_id: user.id
@@ -283,9 +277,9 @@ const OrdersPage = () => {
         });
 
         if (error) throw error;
-        
+
         if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data)) {
-            setOrders(apiResponse.Data);
+          setOrders(apiResponse.Data);
         }
 
       } catch (error) {
@@ -306,24 +300,24 @@ const OrdersPage = () => {
   return (
     <div>
       <PageHeader>Orders</PageHeader>
-      
+
       {orders.length === 0 ? (
         <MessageContainer>
-            You have no orders yet.
+          You have no orders yet.
         </MessageContainer>
       ) : orders.length === 1 ? (
         <SingleOrderCard>
-            <SingleOrderHeader>
-                <SingleOrderId>Order #{orders[0].id}</SingleOrderId>
-                <StatusBadge status={orders[0].status}>{orders[0].status}</StatusBadge>
-            </SingleOrderHeader>
-            <SingleOrderInfo>
-                Placed on <strong>{formatDate(orders[0].date_created)}</strong>
-            </SingleOrderInfo>
-            <SingleOrderTotal>
-                Total: {orders[0].currency} {orders[0].total}
-            </SingleOrderTotal>
-            <SingleOrderButton to={`/orders/${orders[0].id}`}>View Details</SingleOrderButton>
+          <SingleOrderHeader>
+            <SingleOrderId>Order #{orders[0].id}</SingleOrderId>
+            <StatusBadge status={orders[0].status}>{orders[0].status}</StatusBadge>
+          </SingleOrderHeader>
+          <SingleOrderInfo>
+            Placed on <strong>{formatDate(orders[0].date_created)}</strong>
+          </SingleOrderInfo>
+          <SingleOrderTotal>
+            Total: {orders[0].currency} {orders[0].total}
+          </SingleOrderTotal>
+          <SingleOrderButton to={`/orders/${orders[0].id}`}>View Details</SingleOrderButton>
         </SingleOrderCard>
       ) : (
         <>
@@ -336,7 +330,7 @@ const OrdersPage = () => {
               <HeaderCell>Total</HeaderCell>
               <HeaderCell>Actions</HeaderCell>
             </HeaderRow>
-            
+
             {orders.map((order) => (
               <DataRow key={order.id}>
                 <DataCell className="order-id">#{order.id}</DataCell>
@@ -359,7 +353,7 @@ const OrdersPage = () => {
                   <StatusBadge status={order.status}>{order.status}</StatusBadge>
                 </CardRow>
                 <CardDate>{formatDate(order.date_created)}</CardDate>
-                <hr style={{border: 'none', borderTop: '1px solid #eee', margin: '12px 0'}} />
+                <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
                 <CardTotal>{`${order.currency} ${order.total}`}</CardTotal>
                 <CardViewButton to={`/orders/${order.id}`}>View Details</CardViewButton>
               </MobileOrderCard>

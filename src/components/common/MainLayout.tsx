@@ -72,7 +72,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const handleMenuToggle = () => {
     setMenuOpen(!isMenuOpen);
   };
-  
+
   const handleCloseMenu = () => {
     setMenuOpen(false);
   };

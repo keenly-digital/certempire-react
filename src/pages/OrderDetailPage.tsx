@@ -38,7 +38,7 @@ const formatDate = (isoTimestamp: string) => {
 };
 
 const getStatusColor = (status: string, theme: DefaultTheme) => {
-    return status === 'completed' ? theme.colors.success : '#E65100'; // Using theme color for success
+  return status === 'completed' ? theme.colors.success : '#E65100'; // Now fully utilized
 };
 
 
@@ -70,7 +70,8 @@ const SectionCard = styled.div`
   }
 `;
 
-const OrderSummaryText = styled.p`
+// --- MODIFICATION 1: Accept a 'status' prop for dynamic styling ---
+const OrderSummaryText = styled.p<{ status: string }>`
   font-size: 16px;
   line-height: 1.6;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -82,7 +83,8 @@ const OrderSummaryText = styled.p`
 
   .status {
     font-weight: 700;
-    color: ${({ theme }) => getStatusColor('completed', theme)};
+    /* Use the passed 'status' prop to get the correct color */
+    color: ${({ theme, status }) => getStatusColor(status, theme)};
   }
 `;
 
@@ -198,7 +200,7 @@ const OrderDetailPage = () => {
     const fetchOrderDetails = async () => {
       setLoading(true);
       try {
-       const payload = {
+        const payload = {
           method: 'GET',
           endpoint: `cwc/orders/${orderId}`,
           user_id: user.id
@@ -209,9 +211,9 @@ const OrderDetailPage = () => {
         });
         if (error) throw error;
         if (apiResponse && apiResponse.Success && apiResponse.Data) {
-            setOrder(apiResponse.Data);
+          setOrder(apiResponse.Data);
         }
-      } catch(err) {
+      } catch (err) {
         console.error("Error fetching order details:", err);
       } finally {
         setLoading(false);
@@ -228,7 +230,8 @@ const OrderDetailPage = () => {
       <BackLink to="/orders">← Back to Orders</BackLink>
 
       <SectionCard>
-        <OrderSummaryText>
+        {/* --- MODIFICATION 2: Pass the dynamic order status as a prop --- */}
+        <OrderSummaryText status={order.status}>
           Order <strong>#{order.id}</strong> was placed on <strong>{formatDate(order.date_created)}</strong> and is currently <strong className="status">{order.status}</strong>.
         </OrderSummaryText>
       </SectionCard>
@@ -252,7 +255,7 @@ const OrderDetailPage = () => {
           </TotalsRow>
         </ItemsTable>
       </SectionCard>
-      
+
       <SectionCard>
         <SectionTitle>Billing Address</SectionTitle>
         <AddressBlock>

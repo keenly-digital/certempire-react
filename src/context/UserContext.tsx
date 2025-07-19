@@ -4,7 +4,7 @@ type User = {
   id: number;
   email: string;
   name: string;
-  simulation_user_id: string; 
+  simulation_user_id: string;
 };
 
 type UserContextType = {
@@ -16,7 +16,7 @@ type UserContextType = {
 const UserContext = createContext<UserContextType>({
   user: null,
   isLoading: true,
-  logout: () => {},
+  logout: () => { },
 });
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {

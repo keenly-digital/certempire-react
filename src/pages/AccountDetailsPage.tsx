@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useUser } from '../context/UserContext';
 import { supabase } from '../supabaseClient';
-import { Link, useNavigate } from 'react-router-dom';
 
 // --- Type Definitions (Untouched) ---
 type BillingData = {
@@ -135,7 +134,6 @@ const LoadingContainer = styled.div`
 // --- The Main Page Component (Business Logic Untouched) ---
 const AccountDetailsPage = () => {
   const { user } = useUser();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState<UserFormData | null>(null);
   const [passwordData, setPasswordData] = useState<PasswordFormData>({ newPassword: '', confirmPassword: '' });
   const [isLoading, setLoading] = useState(true);
@@ -177,7 +175,7 @@ const AccountDetailsPage = () => {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !formData) return;
@@ -240,7 +238,7 @@ const AccountDetailsPage = () => {
   return (
     <div>
       <PageHeader>Account Details</PageHeader>
-      
+
       <FormContainer>
         {/* --- Main Details Form --- */}
         <Form onSubmit={handleSubmit}>
@@ -256,26 +254,26 @@ const AccountDetailsPage = () => {
           </ResponsiveRow>
 
           <FormSectionTitle>Billing Address</FormSectionTitle>
-          
+
           <FormGroup>
-              <Label htmlFor="address_1">Street Address</Label>
-              <Input id="address_1" name="address_1" type="text" value={formData.billing.address_1} onChange={handleInputChange} />
+            <Label htmlFor="address_1">Street Address</Label>
+            <Input id="address_1" name="address_1" type="text" value={formData.billing.address_1} onChange={handleInputChange} />
           </FormGroup>
           <ResponsiveRow>
             <FormGroup>
-                <Label htmlFor="city">City</Label>
-                <Input id="city" name="city" type="text" value={formData.billing.city} onChange={handleInputChange} />
+              <Label htmlFor="city">City</Label>
+              <Input id="city" name="city" type="text" value={formData.billing.city} onChange={handleInputChange} />
             </FormGroup>
             <FormGroup>
-                <Label htmlFor="state">State</Label>
-                <Input id="state" name="state" type="text" value={formData.billing.state} onChange={handleInputChange} />
+              <Label htmlFor="state">State</Label>
+              <Input id="state" name="state" type="text" value={formData.billing.state} onChange={handleInputChange} />
             </FormGroup>
           </ResponsiveRow>
           <FormGroup>
-              <Label htmlFor="postcode">Postcode / ZIP</Label>
-              <Input id="postcode" name="postcode" type="text" value={formData.billing.postcode} onChange={handleInputChange} />
+            <Label htmlFor="postcode">Postcode / ZIP</Label>
+            <Input id="postcode" name="postcode" type="text" value={formData.billing.postcode} onChange={handleInputChange} />
           </FormGroup>
-          
+
           <SaveButton type="submit" disabled={isSaving}>
             {isSaving ? 'Saving...' : 'Save Address'}
           </SaveButton>

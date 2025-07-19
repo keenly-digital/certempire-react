@@ -200,7 +200,7 @@ const SecondaryButton = styled(Link)`
   display: inline-block;
   background-color: ${({ theme }) => theme.colors.primary};
   color: #ffffff;
-  border: 0.5px solidrgb(177, 177, 255);
+  border: 0.5px solid rgb(177, 177, 255);
   padding: 10px 20px;
   border-radius: 8px;
   text-decoration: none;
@@ -223,7 +223,7 @@ const MessageContainer = styled.div`
 
 // --- The Page Component ---
 const DownloadsPage = () => {
-  const { user, isLoading: isUserLoading } = useUser();
+  const { user } = useUser();
   const [downloads, setDownloads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -235,21 +235,24 @@ const DownloadsPage = () => {
     const getPurchasedDownloads = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('https://kxbjsyuhceggsyvxdkof.supabase.co/functions/v1/get-wc-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method: 'GET',
-            endpoint: 'cwc/downloads', 
-            user_id: user.id 
-          }),
+        const payload = {
+          method: 'GET',
+          endpoint: 'cwc/downloads',
+          user_id: user.id
+        };
+
+        const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
+          body: payload,
         });
-        const data = await response.json();
-        if (data && data.Success && Array.isArray(data.Data)) {
-          setDownloads(data.Data);
+
+        if (error) throw error;
+
+        if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data)) {
+          setDownloads(apiResponse.Data);
         } else {
           setDownloads([]);
         }
+
       } catch (error) {
         setDownloads([]);
       } finally {
@@ -326,7 +329,7 @@ const DownloadsPage = () => {
             <Row key={item.download_id}>
               <DataCell>{item.product_name}</DataCell>
               <DataCell>{item.downloads_remaining}</DataCell>
-              <DataCell>{item.access_expires}</DataCell>
+              <DataCell>{formatDate(item.access_expires)}</DataCell>
               <DataCell>
                 <ButtonContainer>
                   <PrimaryButton href={item.download_url} target="_blank">Download</PrimaryButton>

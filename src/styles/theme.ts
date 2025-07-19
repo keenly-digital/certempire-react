@@ -4,6 +4,7 @@ export const theme = {
   colors: {
     // Core Brand Colors
     primary: '#2D1684', // Main dark purple from header
+    
     primaryLight: '#5F3DF2', // A slightly lighter purple for gradients/highlights
     accent: '#BA93FD', // Lighter purple for icons and accents
     

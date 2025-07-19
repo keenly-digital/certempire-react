@@ -4,6 +4,13 @@ import { corsHeaders } from '../_shared/cors.ts'
 import { Buffer } from 'https://deno.land/std@0.177.0/node/buffer.ts'
 
 Deno.serve(async (req) => {
+
+console.log('Edge Function Env Vars:', {
+    WP_SITE_URL: Deno.env.get('STAGING_SITE_URL'),
+    WC_CONSUMER_KEY: Deno.env.get('STAGING_CONSUMER_KEY'),
+    WC_CONSUMER_SECRET: Deno.env.get('STAGING_SECRET_KEY'),
+  });
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -14,9 +21,9 @@ Deno.serve(async (req) => {
     if (!method || !endpoint) throw new Error("Missing method or endpoint parameter");
 
     // Get environment variables
-    const WC_CONSUMER_KEY = Deno.env.get('WC_CONSUMER_KEY');
-    const WC_CONSUMER_SECRET = Deno.env.get('WC_CONSUMER_SECRET');
-    const WP_SITE_URL = Deno.env.get('WP_SITE_URL');
+    const WC_CONSUMER_KEY = Deno.env.get('STAGING_CONSUMER_KEY');
+    const WC_CONSUMER_SECRET = Deno.env.get('STAGING_SECRET_KEY');
+    const WP_SITE_URL = Deno.env.get('STAGING_SITE_URL');
 
     let apiUrl = '';
     let fetchOptions: RequestInit = {};
