@@ -49,6 +49,10 @@ type Topic = { questions: Question[]; case_study?: string; topic_name?: string; 
 type SimulationData = { fileName: string; topics: Record<string, Topic>; };
 type SupabaseFile = { 'ai-parsed-data': { result: { topics: Record<string, Topic>; }; }; filename: string; };
 type StructuredItem = { type: 'question'; content: Question; parent?: { topic?: string | undefined; caseStudyTitle?: string | undefined; caseStudyDescription?: string | undefined; caseStudyQuestionsCount?: number | undefined; } };
+type DownloadRecord = {
+  supabase_file_id: string;
+  download_url: string;
+};
 // --- SVG Icons ---
 const IconSearch = () => <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 6.5C10 8.433 8.433 10 6.5 10C4.567 10 3 8.433 3 6.5C3 4.567 4.567 3 6.5 3C8.433 3 10 4.567 10 6.5ZM9.30884 10.0159L11.5 12.5L12.5 11.5L10.0158 9.30885C9.42248 9.75587 8.68594 10.0345 7.89932 10.0883L6.5 10C4.567 10 3 8.433 3 6.5C3 4.567 4.567 3 6.5 3C8.433 3 10 4.567 10 6.5C10 7.50556 9.61334 8.42373 9.00001 9.13098L9.30884 10.0159Z" fill="#757575"></path></svg>;
 const IconDownload = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H2V12.5C2 12.7761 2.22386 13 2.5 13H12.5C12.7761 13 13 12.7761 13 12.5V6H11V12H4V6ZM7.5 10L11 5H8V2H7V5H4L7.5 10Z" fill="currentColor"></path></svg>;
@@ -108,7 +112,10 @@ const GoToButton = styled.button`
 `;
 const DownloadButton = styled.button`
   background-color: #673AB7; color: white; border: none; border-radius: 12px; padding: 10px 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;
-  @media (max-width: 650px) { padding: 12px; border-radius: 50%; }
+  @media (max-width: 650px) {
+    padding: 10px; /* Makes the button a smaller square */
+    border-radius: 12px; /* Keeps the corners rounded, not circular */
+  }
 `;
 const GoToFieldContainer = styled.div<{ $show: boolean }>`
   height: ${({ $show }) => $show ? '60px' : '0'}; display: flex; justify-content: center; align-items: center; gap: 8px; overflow: hidden; transition: height 0.3s;
@@ -187,6 +194,8 @@ const SimulationPage = () => {
   const startIndex = location.state?.startIndex;
   const [debouncedIndex] = useDebounce(currentIndex, 1500); // Saves 1.5s after user stops
   const [alertInfo, setAlertInfo] = useState({ isOpen: false, message: "", href: null as string | null });
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+
 
   const handleReferenceLinkClick = (href: string) => {
     setAlertInfo({
@@ -274,6 +283,38 @@ const SimulationPage = () => {
 
   }, [debouncedIndex, user, fileId, simulationData, structuredItems.length]); // Dependencies
 
+
+  useEffect(() => {
+    if (!user || !fileId) return;
+
+    const getDownloadLink = async () => {
+      try {
+        const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
+          body: {
+            method: 'GET',
+            endpoint: 'cwc/downloads',
+            user_id: user.id
+          },
+        });
+
+        if (error) throw error;
+
+        if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data)) {
+          // Find the download that corresponds to the current simulation file
+          const matchingDownload = apiResponse.Data.find((d: DownloadRecord) => d.supabase_file_id === fileId);
+          if (matchingDownload) {
+            setDownloadUrl(matchingDownload.download_url);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching download link for simulation:", err);
+      }
+    };
+
+    getDownloadLink();
+  }, [user, fileId]); // Dependencies
+
+
   useEffect(() => {
     setCurrentIndex(0);
     setShowAnswersMap({});
@@ -313,7 +354,15 @@ const SimulationPage = () => {
           <GoToButton onClick={() => setShowGoToField(!showGoToField)}>
             <IconSearch /> Go To
           </GoToButton>
-          <DownloadButton onClick={() => { /* ... */ }}>
+          <DownloadButton
+            onClick={() => {
+              if (downloadUrl) {
+                window.open(downloadUrl, '_blank');
+              }
+            }}
+            disabled={!downloadUrl}
+            title={!downloadUrl ? "Download link not available" : "Download file"}
+          >
             <IconDownload />
             <DownloadButtonText>Download</DownloadButtonText>
           </DownloadButton>

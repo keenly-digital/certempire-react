@@ -157,34 +157,88 @@ const PageHeader = styled.h2`
   margin-bottom: 24px;
 `;
 const DownloadsTable = styled.div`
-  background-color: white;
-  border-radius: 16px;
-  border: 1px solid #EAEAEA;
-  overflow: hidden;
+  /* On mobile, this becomes a simple flex container to space out the cards */
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* This creates a nice space between each card */
 `;
 const Row = styled.div`
+  /* Keep original desktop styles */
   display: grid;
   grid-template-columns: 3fr 1fr 1fr 2fr;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
-  &:last-child {
-    border-bottom: none;
+
+  /* On desktop, the row is inside a table with borders */
+  @media (min-width: 769px) {
+    border-bottom: 1px solid #f0f0f0;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  /* On mobile, each row becomes its own card */
+  @media (max-width: 768px) {
+    display: block;
+    padding: 16px;
+    background-color: white;
+    border-radius: 16px;
+    border: 1px solid #EAEAEA;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 `;
+
 const HeaderRow = styled(Row)`
   background-color: #fafafa;
   font-weight: 600;
   color: #333;
+
+  @media (max-width: 768px) {
+    display: none; // Hide the header on mobile
+  }
 `;
 const DataCell = styled.div`
   color: #555;
+
+  @media (max-width: 768px) {
+    display: flex; // Arrange label and content
+    justify-content: space-between; // Push them to opposite ends
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5; // Separator for data points
+
+    // Use the ::before pseudo-element to display the label
+    &::before {
+      content: attr(data-label); // Get content from the data-label attribute
+      font-weight: 600;
+      color: #333;
+      padding-right: 16px;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
 `;
+
 const ButtonContainer = styled.div`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+
+  @media (max-width: 768px) {
+    flex-direction: column; // Stack buttons vertically on very small screens
+    align-items: stretch; // Make buttons full-width
+    
+    // On slightly larger mobile screens, keep them in a row
+    @media (min-width: 400px) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
 `;
+
+
 const PrimaryButton = styled.a`
   display: inline-block;
   background-color: #2c2c54;
@@ -211,6 +265,7 @@ const SecondaryButton = styled(Link)`
   &:hover {
     background-color: ${({ theme }) => theme.colors.primaryLight};
     color: white;
+    }
 `;
 const MessageContainer = styled.div`
   padding: 40px;
@@ -327,10 +382,12 @@ const DownloadsPage = () => {
           </HeaderRow>
           {allDownloads.map((item: any) => (
             <Row key={item.download_id}>
-              <DataCell>{item.product_name}</DataCell>
-              <DataCell>{item.downloads_remaining}</DataCell>
-              <DataCell>{formatDate(item.access_expires)}</DataCell>
-              <DataCell>
+              <DataCell data-label="Product">{item.product_name}</DataCell>
+              <DataCell data-label="Downloads Remaining">{item.downloads_remaining}</DataCell>
+              <DataCell data-label="Expires">{formatDate(item.access_expires)}</DataCell>
+
+              {/* 👇 This is the corrected section */}
+              <DataCell data-label="Actions">
                 <ButtonContainer>
                   <PrimaryButton href={item.download_url} target="_blank">Download</PrimaryButton>
                   {item.supabase_file_id && (
@@ -338,6 +395,7 @@ const DownloadsPage = () => {
                   )}
                 </ButtonContainer>
               </DataCell>
+
             </Row>
           ))}
         </DownloadsTable>
