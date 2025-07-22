@@ -199,17 +199,17 @@ const DashboardPage = () => {
   // --- Business Logic (Untouched) ---
   const { user } = useUser();
   const [displayName, setDisplayName] = useState('there');
-const [lastStudySession, setLastStudySession] = useState<ProgressRecord | null>(null);
+  const [lastStudySession, setLastStudySession] = useState<ProgressRecord | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const fetchUserName = async () => {
       try {
         const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
-          body: { 
-            method: 'GET', 
-            endpoint: `cwc/customer/${user.id}`, 
-            user_id: user.id 
+          body: {
+            method: 'GET',
+            endpoint: `cwc/customer/${user.id}`,
+            user_id: user.id
           },
         });
         if (error) throw error;
@@ -224,85 +224,97 @@ const [lastStudySession, setLastStudySession] = useState<ProgressRecord | null>(
   }, [user]);
 
   // --- This entire block is new ---
-useEffect(() => {
-  if (!user) return;
+  useEffect(() => {
+    if (!user) return;
 
-  const fetchProgress = async () => {
-    // Fetches the most recently updated progress record for the user
-    const { data, error } = await supabase
-      .from('user_progress')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single(); // .single() returns one object or null
+    const fetchProgress = async () => {
+      // Fetches the most recently updated progress record for the user
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single(); // .single() returns one object or null
 
-    if (data) {
-      setLastStudySession(data);
-    }
+      if (data) {
+        setLastStudySession(data);
+      }
 
-    // Ignore the error when no row is found, as that's expected for new users
-    if (error && error.code !== 'PGRST116') {
-      console.error("Error fetching user progress:", error);
-    }
-  };
+      // Ignore the error when no row is found, as that's expected for new users
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching user progress:", error);
+      }
+    };
 
-  fetchProgress();
-}, [user]); // Re-run when the user object is available
+    fetchProgress();
+  }, [user]); // Re-run when the user object is available
 
   // --- JSX (Untouched) ---
   return (
     <div>
       <WelcomeHeader>Welcome back, {displayName}!</WelcomeHeader>
-      
+
       <DashboardLayout>
         <MainColumn>
           <StudyCard>
             <StudySubHeader>CONTINUE WHERE YOU LEFT OFF</StudySubHeader>
-{lastStudySession && lastStudySession.total_questions > 0 ? (
-  <>
-    <StudyCourseTitle>{lastStudySession.product_name}</StudyCourseTitle>
-    <ProgressWrapper>
-      <ProgressBarContainer>
-        <ProgressBarFill $progress={((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100} />
-      </ProgressBarContainer>
-      <p>
-        {Math.round(((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100)}%
-      </p>
-    </ProgressWrapper>
-    <StudyButton
-      as={Link}
-      to={`/practice/${lastStudySession.last_viewed_file_id}`}
-      state={{ startIndex: lastStudySession.last_viewed_question_index }}
-    >
-      Continue Studying
-    </StudyButton>
-  </>
-) : (
-  <>
-    <StudyCourseTitle>No recent activity</StudyCourseTitle>
-    <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginTop: '16px' }}>
-      Your progress will appear here once you start a practice session.
-    </p>
-  </>
-)}
+            {lastStudySession && lastStudySession.total_questions > 0 ? (
+              <>
+                <StudyCourseTitle>{lastStudySession.product_name}</StudyCourseTitle>
+                <ProgressWrapper>
+                  <ProgressBarContainer>
+                    <ProgressBarFill $progress={((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100} />
+                  </ProgressBarContainer>
+                  <p>
+                    {Math.round(((lastStudySession.last_viewed_question_index + 1) / lastStudySession.total_questions) * 100)}%
+                  </p>
+                </ProgressWrapper>
+                <StudyButton
+                  as={Link}
+                  to={`/practice/${lastStudySession.last_viewed_file_id}`}
+                  state={{ startIndex: lastStudySession.last_viewed_question_index }}
+                >
+                  Continue Studying
+                </StudyButton>
+              </>
+            ) : (
+              <>
+                <StudyCourseTitle>No recent activity</StudyCourseTitle>
+                <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginTop: '16px' }}>
+                  Your progress will appear here once you start a practice session.
+                </p>
+              </>
+            )}
           </StudyCard>
 
           <SummaryGrid>
             <SummaryCard>
-              <div className="top-row"><span className="title">My Rewards</span><IconMedal color="#FFC107" /></div>
+              <div className="top-row"><span className="title">My Rewards </span><IconMedal color="#FFC107" /></div>
+              <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
+                COMING SOON.
+              </p>
               <span className="value">2,500 Pts</span>
             </SummaryCard>
             <SummaryCard>
               <div className="top-row"><span className="title">Pending Tasks</span><IconListChecks color="#F44336" /></div>
+              <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
+                COMING SOON.
+              </p>
               <span className="value">3 Tasks</span>
             </SummaryCard>
-             <SummaryCard>
+            <SummaryCard>
               <div className="top-row"><span className="title">Open Reports</span><IconFlag color="#FF9800" /></div>
+              <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
+                COMING SOON.
+              </p>
               <span className="value">1 Report</span>
             </SummaryCard>
             <SummaryCard>
               <div className="top-row"><span className="title">Recent Purchase</span><IconShoppingBag color="#2196F3" /></div>
+              <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
+                COMING SOON.
+              </p>
               <span className="value">DP-203</span>
             </SummaryCard>
           </SummaryGrid>
@@ -311,6 +323,9 @@ useEffect(() => {
         <RightColumn>
           <UpdatesCard>
             <UpdatesHeader>Updates & Notifications</UpdatesHeader>
+            <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
+              COMING SOON.
+            </p>
             <UpdateItem $isUnread>
               <IconCheckCircle color="green" />
               <div>
@@ -320,7 +335,7 @@ useEffect(() => {
               <div className="unread-dot"></div>
             </UpdateItem>
 
-  <UpdateItem $isUnread>
+            <UpdateItem $isUnread>
               <IconCheckCircle color="green" />
               <div>
                 <p className="title">New Task Assigned</p>
@@ -346,7 +361,7 @@ useEffect(() => {
           </UpdatesCard>
         </RightColumn>
       </DashboardLayout>
-    </div>
+    </div >
   );
 };
 

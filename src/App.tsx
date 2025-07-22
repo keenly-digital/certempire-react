@@ -15,25 +15,28 @@ import DownloadsPage from './pages/DownloadsPage';
 import AddressesPage from './pages/AddressesPage';
 import AccountDetailsPage from './pages/AccountDetailsPage';
 import SimulationPage from './pages/SimulationPage';
+import ProtectedRoute from "./components/common/ProtectedRoute";
+
 
 function App() {
   return (
-    // The UserProvider now wraps our entire application
     <UserProvider>
       <ThemeProvider theme={theme}>
         <GlobalStyle />
         <Router>
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-              <Route path="/downloads" element={<DownloadsPage />} />
-              <Route path="/addresses" element={<AddressesPage />} />
-              <Route path="/account-details" element={<AccountDetailsPage />} />
-              <Route path="/practice/:fileId" element={<SimulationPage />} />
-            </Routes>
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+                <Route path="/downloads" element={<DownloadsPage />} />
+                <Route path="/addresses" element={<AddressesPage />} />
+                <Route path="/account-details" element={<AccountDetailsPage />} />
+                <Route path="/practice/:fileId" element={<SimulationPage />} />
+              </Routes>
+            </MainLayout>
+          </ProtectedRoute>
         </Router>
       </ThemeProvider>
     </UserProvider>
