@@ -13,6 +13,11 @@ type ProgressRecord = {
   total_questions: number;
 };
 
+type PurchaseRecord = {
+  product_name: string;
+  order_id: number;
+};
+
 // --- SVG Icons (Business logic untouched) ---
 const IconMedal = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" /></svg>;
 const IconListChecks = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-2h-2v2h2zm0-4h-2v2h2V6.5zm0-4h-2v2h2V3.5zM2 16h8v-2H2v2z" /></svg>;
@@ -20,6 +25,7 @@ const IconFlag = ({ color = 'currentColor' }) => <svg width="24" height="24" vie
 const IconShoppingBag = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2h8V8h2v12z" /></svg>;
 const IconCheckCircle = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>;
 const IconEnvelope = ({ color = 'currentColor' }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={color}><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>;
+
 
 // --- Styled Components (UI/UX Updated) ---
 const WelcomeHeader = styled.h2`
@@ -143,7 +149,7 @@ const SummaryCard = styled.div`
     font-weight: 500;
   }
   .value {
-    font-size: 28px;
+    font-size: 16px;
     font-weight: 600;
     color: ${({ theme }) => theme.colors.textPrimary};
   }
@@ -200,6 +206,8 @@ const DashboardPage = () => {
   const { user } = useUser();
   const [displayName, setDisplayName] = useState('there');
   const [lastStudySession, setLastStudySession] = useState<ProgressRecord | null>(null);
+  const [recentPurchase, setRecentPurchase] = useState<PurchaseRecord | null>(null);
+  const [isPurchaseLoading, setIsPurchaseLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -221,6 +229,38 @@ const DashboardPage = () => {
       }
     };
     fetchUserName();
+  }, [user]);
+
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchRecentPurchase = async () => {
+      setIsPurchaseLoading(true);
+      try {
+        const { data: apiResponse, error } = await supabase.functions.invoke('get-wc-data', {
+          body: {
+            method: 'GET',
+            endpoint: 'cwc/downloads',
+            user_id: user.id
+          },
+        });
+
+        if (error) throw error;
+
+        if (apiResponse && apiResponse.Success && Array.isArray(apiResponse.Data) && apiResponse.Data.length > 0) {
+          // Sort by order_id to find the most recent purchase
+          const sortedData = [...apiResponse.Data].sort((a, b) => b.order_id - a.order_id);
+          setRecentPurchase(sortedData[0]);
+        }
+      } catch (err) {
+        console.error("Error fetching recent purchase:", err);
+      } finally {
+        setIsPurchaseLoading(false);
+      }
+    };
+
+    fetchRecentPurchase();
   }, [user]);
 
   // --- This entire block is new ---
@@ -289,13 +329,23 @@ const DashboardPage = () => {
           </StudyCard>
 
           <SummaryGrid>
+
             <SummaryCard>
-              <div className="top-row"><span className="title">My Rewards </span><IconMedal color="#FFC107" /></div>
-              <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
-                COMING SOON.
-              </p>
-              <span className="value">2,500 Pts</span>
+              <div className="top-row">
+                <span className="title">Recent Purchase</span>
+                <IconShoppingBag color="#2196F3" />
+              </div>
+              <span className="value">
+                {isPurchaseLoading ? (
+                  "Loading..."
+                ) : recentPurchase ? (
+                  recentPurchase.product_name
+                ) : (
+                  "N/A"
+                )}
+              </span>
             </SummaryCard>
+
             <SummaryCard>
               <div className="top-row"><span className="title">Pending Tasks</span><IconListChecks color="#F44336" /></div>
               <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
@@ -311,11 +361,11 @@ const DashboardPage = () => {
               <span className="value">1 Report</span>
             </SummaryCard>
             <SummaryCard>
-              <div className="top-row"><span className="title">Recent Purchase</span><IconShoppingBag color="#2196F3" /></div>
+              <div className="top-row"><span className="title">My Rewards </span><IconMedal color="#FFC107" /></div>
               <p style={{ color: 'rgba(149, 4, 4, 0.8)', marginBottom: '10px', marginTop: '1px' }}>
                 COMING SOON.
               </p>
-              <span className="value">DP-203</span>
+              <span className="value">2,500 Pts</span>
             </SummaryCard>
           </SummaryGrid>
         </MainColumn>

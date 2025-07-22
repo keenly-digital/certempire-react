@@ -73,20 +73,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     setMenuOpen(!isMenuOpen);
   };
 
-  const handleCloseMenu = () => {
-    setMenuOpen(false);
-  };
-
   const handleConfirmLogout = () => {
     logout();
     window.location.href = 'https://www.certempire.com';
+  };
+
+  const handleCloseMenu = () => {
+    setMenuOpen(false);
   };
 
   return (
     <AppShell>
       <Header onMenuClick={handleMenuToggle} />
       <MainWrapper>
-        <Sidebar isOpen={isMenuOpen} onLogoutClick={() => setLogoutDialogOpen(true)} />
+        <Sidebar
+          isOpen={isMenuOpen}
+          onLogoutClick={() => setLogoutDialogOpen(true)}
+          onLinkClick={handleCloseMenu}
+        />
         <Overlay isOpen={isMenuOpen} onClick={handleCloseMenu} />
         <PageContentWrapper>
           <ContentContainer>

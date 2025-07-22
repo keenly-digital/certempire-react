@@ -7,6 +7,7 @@ import { NavLink } from 'react-router-dom';
 interface SidebarProps {
   isOpen: boolean;
   onLogoutClick: () => void;
+  onLinkClick: () => void; // Add this prop
 }
 
 // This container now matches the floating panel design from your Flutter code
@@ -30,8 +31,13 @@ const SidebarContainer = styled.aside<{ isOpen: boolean; }>`
   @media (max-width: 768px) {
     position: fixed;
     left: 0;
-    top: 0;
-    height: 100%;
+    
+    /* --- The Changes --- */
+    top: 70px; /* 1. Start the sidebar 70px from the top (the header's height) */
+    height: calc(100% - 70px); /* 2. Adjust height to fill the remaining screen */
+    padding: 16px 0; /* 3. Use normal padding instead of the large top padding */
+    /* --- End of Changes --- */
+    
     width: 280px;
     margin: 0;
     border-radius: 0;
@@ -39,7 +45,6 @@ const SidebarContainer = styled.aside<{ isOpen: boolean; }>`
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
     box-shadow: none;
-    padding: 0;
     background-color: ${({ theme }) => theme.colors.surface};
     border: none;
   }
@@ -122,16 +127,27 @@ const LogoutButton = styled.button`
   border: none; // Reset default button border
 `;
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onLogoutClick }) => {
+// 2. Accept the new prop in your component
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onLogoutClick, onLinkClick }) => {
+
+  // 3. Create a new handler for the logout button
+  const handleLogoutClick = () => {
+    onLinkClick(); // Close the menu
+    onLogoutClick(); // Open the dialog
+  };
+
   return (
     <SidebarContainer isOpen={isOpen}>
       <NavList>
-        <StyledNavLink to="/" end>Dashboard</StyledNavLink>
-        <StyledNavLink to="/orders">Orders</StyledNavLink>
-        <StyledNavLink to="/downloads">Downloads</StyledNavLink>
-        <StyledNavLink to="/addresses">Addresses</StyledNavLink>
-        <StyledNavLink to="/account-details">Account Details</StyledNavLink>
-        <LogoutButton onClick={onLogoutClick}>Log out</LogoutButton>
+        {/* 4. Add the onClick handler to all NavLinks */}
+        <StyledNavLink to="/" end onClick={onLinkClick}>Dashboard</StyledNavLink>
+        <StyledNavLink to="/orders" onClick={onLinkClick}>Orders</StyledNavLink>
+        <StyledNavLink to="/downloads" onClick={onLinkClick}>Downloads</StyledNavLink>
+        <StyledNavLink to="/addresses" onClick={onLinkClick}>Addresses</StyledNavLink>
+        <StyledNavLink to="/account-details" onClick={onLinkClick}>Account Details</StyledNavLink>
+
+        {/* 5. Use the new combined handler for the logout button */}
+        <LogoutButton onClick={handleLogoutClick}>Log out</LogoutButton>
       </NavList>
     </SidebarContainer>
   );
