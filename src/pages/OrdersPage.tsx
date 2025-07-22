@@ -254,15 +254,6 @@ const MessageContainer = styled.div`
 
 
 // --- The Main Page Component (Business Logic Untouched) ---
-
-const getSiteForAPI = () => {
-  // Use window.location.host or another env flag to auto-detect
-  if (window.location.hostname.includes('staging')) {
-    return 'staging';
-  }
-  return 'certempire';
-};
-
 const OrdersPage = () => {
   const { user, isLoading: isUserLoading } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -277,7 +268,6 @@ const OrdersPage = () => {
 
       try {
         const payload = {
-          site: getSiteForAPI(),
           method: 'GET',
           endpoint: 'cwc/orders',
           user_id: user.id
